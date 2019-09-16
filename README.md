@@ -2,7 +2,7 @@
 
 Motivations:
 - I cannot use GitLab webhook in some environments for security reason.
-- I like Jenkins, but I don't want to rely on complicated plugins which may broke entire Jenkins.
+- I like Jenkins, but I don't want to rely on complicated plugins which may break entire Jenkins.
 
 
 ## Merge Request Hook
