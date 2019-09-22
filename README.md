@@ -38,7 +38,7 @@ export GITLAB_BUILD_URL="http://localhost/jenkins/job/test/1"
 ./gitlab with_pipeline make build
 ```
 
-Comment command result.
+Run command and comment result on merge request.
 ```sh
 export GITLAB_MR_IID="3"
 export GITLAB_MR_COMMENT_ON_START=":rocket: Build started."
@@ -57,4 +57,19 @@ export GITLAB_MR_COMMENT_ON_START=":rocket: Build started."
 export GITLAB_MR_COMMENT_ON_SUCCESS=":smile_cat: Build success."
 export GITLAB_MR_COMMENT_ON_FAIL=":crying_cat_face: Build failed."
 ./gitlab with_pipeline ./gitlab with_merge_request_comment make build
+```
+
+Run command and send slack message.
+```sh
+export SLACK_API_TOKEN="your token"
+export SLACK_CHANNEL="general"
+export SLACK_MESSAGE_ON_SUCCESS=":smile_cat: Success"
+export SLACK_MESSAGE_ON_FAIL=":crying_cat_face: Fail"
+./slack with_message make build
+```
+
+Get slack user id from commit log.
+```sh
+export SLACK_API_TOKEN="your token"
+./slack email2userid "$(git log -1 --pretty=format:'%ae')"
 ```
