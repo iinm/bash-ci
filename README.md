@@ -17,6 +17,11 @@ hooks=$(cat << 'EOF'
     "id": "test",
     "filter": ".labels[] | contains(\"test\")",
     "cmd": "echo \"id: $MERGE_REQUEST_IID source: $SOURCE_BRANCH -> target: $TARGET_BRANCH\""
+  },
+  {
+    "id": "test-jenkins",
+    "filter": ".labels[] | contains(\"jenkins-test\")",
+    "cmd": "curl -X POST -u $JENKINS_AUTH \"http://localhost/jenkins/job/test/buildWithParameters?SOURCE_BRANCH=$SOURCE_BRANCH&TARGET_BRANCH=$TARGET_BRANCH&MERGE_REQUEST_IID=$MERGE_REQUEST_IID\""
   }
 ]
 EOF
