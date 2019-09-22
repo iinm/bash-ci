@@ -1,54 +1,60 @@
-# Bash scripts for GitLab
+# GitLab CI for Bash
 
-Motivations:
-- I cannot use GitLab webhook in some environments for security reason.
-- I like Jenkins, but I don't want to rely on complicated plugins which may break entire Jenkins.
+## Usage
 
-
-## Merge Request Hook
-
-Use case: Verify source code when merge request is created.
-
-Usage:
+Set environment variables.
 ```sh
-env \
-  GITLAB_BASE_URL=https://gitlab.com \
-  GITLAB_PROJECT_ID=0000 \
-  GITLAB_PRIVATE_TOKEN="your token" \
-  ./merge_request_hook.bash ./example/merge_request_hooks ./example/hook_history
+export GITLAB_BASE_URL="https://gitlab.com"
+export GITLAB_PRIVATE_TOKEN="your token"   # https://gitlab.com/profile/personal_access_tokens
+export GITLAB_PROJECT_ID="your project id"
 ```
 
-Example hook script:
+Run command when merge request is created / updated.
 ```sh
-#!/usr/bin/env bash
-
-# filter: .labels[] | contains("test")
-
-cat << EOS
-request_id="$request_id"
-request_iid="$request_iid"
-source_branch="$source_branch"
-target_branch="$target_branch"
-EOS
+hooks=$(cat << 'EOF'
+[
+  {
+    "id": "test",
+    "filter": ".labels[] | contains(\"test\")",
+    "cmd": "echo \"id: $MERGE_REQUEST_IID source: $SOURCE_BRANCH -> target: $TARGET_BRANCH\""
+  }
+]
+EOF
+)
+export GITLAB_MR_HOOK_LOGDIR=hook_log  # Save log to avoid double execution.
+./gitlab list_merge_requests | ./gitlab hook_merge_requests <(echo "$hooks")
 ```
 
-- `# filter: ...` : This comment filters merge request to hook. See [jq manual](https://stedolan.github.io/jq/manual/).
-- Some environment variables are automatically set.
+- `filter` : [jq](https://stedolan.github.io/jq/manual/) filter to select merge request to hook.
+- `cmd` : Command you want to execute when merge request is created / updated.
+  - `$MERGE_REQUEST_IID`, `$SOURCE_BRANCH`, `$TARGET_BRANCH` are automatically set.
 
 
-## Merge Request Comment
-
-Use case: Notify verification result.
-
-Usage:
+Run command as Pipeline job.
 ```sh
-env \
-  GITLAB_BASE_URL=https://gitlab.com \
-  GITLAB_PROJECT_ID=0000 \
-  GITLAB_PRIVATE_TOKEN="your token" \
-  MERGE_REQUEST_IID="1" \
-  COMMENT_ON_START=":rocket: Verification started." \
-  COMMENT_ON_SUCCESS=":smile: LGTM\!" \
-  COMMENT_ON_FAIL=":cry: Sorry, Something is wrong." \
-  ./with_comment.bash make test
+export GITLAB_COMMIT_SHA="43127becfba9ffdc52715c006c1d36eeef8fb8ef"
+export GITLAB_BUILD_SYSTEM_NAME="Jenkins"
+export GITLAB_BUILD_URL="http://localhost/jenkins/job/test/1"
+./gitlab with_pipeline make build
+```
+
+Comment command result.
+```sh
+export GITLAB_MR_IID="3"
+export GITLAB_MR_COMMENT_ON_START=":rocket: Build started."
+export GITLAB_MR_COMMENT_ON_SUCCESS=":smile_cat: Build success."
+export GITLAB_MR_COMMENT_ON_FAIL=":crying_cat_face: Build failed."
+./gitlab with_merge_request_comment make build
+```
+
+Pipeline & Comment
+```sh
+export GITLAB_COMMIT_SHA="43127becfba9ffdc52715c006c1d36eeef8fb8ef"
+export GITLAB_BUILD_SYSTEM_NAME="Jenkins"
+export GITLAB_BUILD_URL="http://localhost/jenkins/job/test/1"
+export GITLAB_MR_IID="3"
+export GITLAB_MR_COMMENT_ON_START=":rocket: Build started."
+export GITLAB_MR_COMMENT_ON_SUCCESS=":smile_cat: Build success."
+export GITLAB_MR_COMMENT_ON_FAIL=":crying_cat_face: Build failed."
+./gitlab with_pipeline ./gitlab with_merge_request_comment make build
 ```

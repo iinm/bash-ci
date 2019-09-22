@@ -1,0 +1,183 @@
+#!/usr/bin/env bash
+
+set -eu
+
+require_envs() {
+  : "${GITLAB_BASE_URL:?}"
+  : "${GITLAB_PRIVATE_TOKEN:?}"
+  : "${GITLAB_PROJECT_ID:?}"
+}
+
+# https://docs.gitlab.com/ee/api/merge_requests.html#list-merge-requests
+list_merge_requests() {
+  require_envs
+  params=${1:-"state=opened&per_page=10000"}
+  curl --silent -X GET "$GITLAB_BASE_URL/api/v4/projects/$GITLAB_PROJECT_ID/merge_requests?$params" -H "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN"
+}
+
+# https://docs.gitlab.com/ee/api/notes.html#create-new-merge-request-note
+comment_on_merge_request() {
+  require_envs
+  merge_request_iid="${1?}"
+  comment="${2?}"
+  curl -s -X POST \
+    -H "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
+    -d "body=$comment" \
+    "$GITLAB_BASE_URL/api/v4/projects/$GITLAB_PROJECT_ID/merge_requests/${merge_request_iid}/notes"
+}
+
+# https://docs.gitlab.com/ee/api/commits.html#post-the-build-status-to-a-commit
+post_build_status() {
+  require_envs
+  : "${sha?}"
+  : "${state?}"
+  : "${name?}"
+  : "${target_url?}"
+  if ! (echo "$state" | grep -qE '^(pending|running|success|failed|canceled)$'); then
+    echo "error: Invalid state" >&2
+    return 1
+  fi
+  curl -s -X POST \
+    -H "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
+    "$GITLAB_BASE_URL/api/v4/projects/$GITLAB_PROJECT_ID/statuses/${sha}" \
+    -d "state=$state" \
+    -d "name=$name" \
+    -d "target_url=$target_url"
+}
+
+# Run command when merge request is updated.
+hook_merge_requests() {
+  hooks_json="${1?}"
+
+  local IFS=$'\n'
+  return_code="0"
+  for merge_request_json in $(cat - | jq -c '.[]'); do
+    if echo "$merge_request_json" | hook_merge_request "$hooks_json"; then
+      :
+    else
+      return_code="$?"
+    fi
+  done
+  return "$return_code"
+}
+
+# Run command for merge request.
+hook_merge_request() {
+  : "${GITLAB_MR_HOOK_LOGDIR?}"
+  SHELL="${SHELL:-bash}"
+  hooks_json="${1?}"
+  merge_request_json="$(cat -)"
+
+  mkdir -p "$GITLAB_MR_HOOK_LOGDIR"
+  echo -e "\n==="
+  echo "$merge_request_json" | jq -r '"Checking MR \"\(.title)\" \(.labels) \(.source_branch) -> \(.target_branch) by \(.author.name)"'
+
+  local return_code="0"
+  for hook_json in $(cat "$hooks_json" | jq -c '.[]'); do
+    id="$(echo "$hook_json" | jq -r '.id')"
+    filter="$(echo "$hook_json" | jq -r '.filter')"
+    cmd="$(echo "$hook_json" | jq -r '.cmd')"
+
+    if test "$(echo "$merge_request_json" | jq "$filter")" = 'true'; then
+      echo "---"
+      echo "$hook_json" | jq -r '"Hook \"\(.id)\" is matched.\nRun \"\(.cmd)\""'
+
+      merge_request_iid="$(echo "$merge_request_json" | jq -r '.iid')"
+      commit_sha="$(echo "$merge_request_json" | jq -r '.sha')"
+      source_branch="$(echo "$merge_request_json" | jq -r '.source_branch')"
+      target_branch="$(echo "$merge_request_json" | jq -r '.target_branch')"
+
+      commit_sha_short="${commit_sha:0:7}"
+      log_file="$GITLAB_MR_HOOK_LOGDIR/$id.$commit_sha_short.log"
+
+      if test -f "$log_file"; then
+        echo "=> SKIP.  Log file aleady exists.  See $log_file"
+
+      elif env MERGE_REQUEST_IID=$merge_request_iid \
+             SOURCE_BRANCH=$source_branch \
+             TARGET_BRANCH=$target_branch \
+             $SHELL <(echo "$cmd") &> $log_file; then
+        echo "=> SUCCESS.  See $log_file"
+
+      else
+        return_code="$?"
+        echo "=> FAILED.  See $log_file"
+      fi
+    fi
+  done
+
+  return "$return_code"
+}
+
+comment_on_merge_request() {
+  require_envs
+  merge_request_iid="${1?}"
+  comment="${2?}"
+  echo -e "\n---"
+  echo "Comment on MR; merge_request_iid: $merge_request_iid, comment: $comment"
+  curl --silent -X POST \
+    -H "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
+    "$GITLAB_BASE_URL/api/v4/projects/$GITLAB_PROJECT_ID/merge_requests/$merge_request_iid/notes" \
+    -d "body=$comment"
+}
+
+with_merge_request_comment() {
+  : "${GITLAB_MR_IID?}"
+  : "${GITLAB_MR_COMMENT_ON_START?}"
+  : "${GITLAB_MR_COMMENT_ON_SUCCESS?}"
+  : "${GITLAB_MR_COMMENT_ON_FAIL?}"
+
+  comment_on_merge_request "$GITLAB_MR_IID" "$GITLAB_MR_COMMENT_ON_START"
+  return_code="0"
+  if "$@"; then
+    return_code="$?"
+    comment_on_merge_request "$GITLAB_MR_IID" "$GITLAB_MR_COMMENT_ON_SUCCESS"
+  else
+    return_code="$?"
+    comment_on_merge_request "$GITLAB_MR_IID" "$GITLAB_MR_COMMENT_ON_FAIL"
+  fi
+  return "$return_code"
+}
+
+# https://docs.gitlab.com/ee/api/commits.html#post-the-build-status-to-a-commit
+post_build_status() {
+  require_envs
+  sha="${1?}"
+  state="${2?}"
+  name="${3?}"
+  target_url="${4?}"
+
+  if ! (echo "$state" | grep -qE '^(pending|running|success|failed|canceled)$'); then
+    echo "error: Invalid state" >&2
+    return 1
+  fi
+  echo -e "\n---"
+  echo "Post build status; sha=$sha, state=$state, name=$name, target_url=$target_url"
+  curl -s -X POST \
+    -H "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
+    "$GITLAB_BASE_URL/api/v4/projects/$GITLAB_PROJECT_ID/statuses/${sha}" \
+    -d "state=$state" \
+    -d "name=$name" \
+    -d "target_url=$target_url"
+}
+
+with_pipeline() {
+  require_envs
+  : "${GITLAB_COMMIT_SHA?}"
+  : "${GITLAB_BUILD_SYSTEM_NAME?}"
+  : "${GITLAB_BUILD_URL?}"
+
+  return_code="0"
+  post_build_status "$GITLAB_COMMIT_SHA" 'running' "$GITLAB_BUILD_SYSTEM_NAME" "$GITLAB_BUILD_URL"
+  if "$@"; then
+    return_code="$?"
+    post_build_status "$GITLAB_COMMIT_SHA" 'success' "$GITLAB_BUILD_SYSTEM_NAME" "$GITLAB_BUILD_URL"
+  else
+    return_code="$?"
+    post_build_status "$GITLAB_COMMIT_SHA" 'failed' "$GITLAB_BUILD_SYSTEM_NAME" "$GITLAB_BUILD_URL"
+  fi
+  return "$return_code"
+}
+
+
+"$@"
