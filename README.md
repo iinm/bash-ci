@@ -1,4 +1,4 @@
-# GitLab CI for Bash
+# GitLab API Client for Bash
 
 ## Usage
 
