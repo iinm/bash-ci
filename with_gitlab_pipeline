@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+set -eu
+
+this_dir="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=gitlab.bash
+source "$this_dir/gitlab.bash"
+
+require_envs
+: "${GITLAB_COMMIT_SHA?}"
+: "${GITLAB_BUILD_SYSTEM_NAME?}"
+: "${GITLAB_BUILD_URL?}"
+
+on_exit() {
+  exit_code="$?"
+  if test "$exit_code" = "0"; then
+    post_build_status "$GITLAB_COMMIT_SHA" 'success' "$GITLAB_BUILD_SYSTEM_NAME" "$GITLAB_BUILD_URL"
+  else
+    post_build_status "$GITLAB_COMMIT_SHA" 'failed' "$GITLAB_BUILD_SYSTEM_NAME" "$GITLAB_BUILD_URL"
+  fi
+  return "$exit_code"
+}
+
+on_cancel() {
+  post_build_status "$GITLAB_COMMIT_SHA" 'canceled' "$GITLAB_BUILD_SYSTEM_NAME" "$GITLAB_BUILD_URL"
+  trap -- EXIT
+  trap -- TERM
+  kill -s TERM $$
+}
+
+trap 'on_exit' EXIT
+trap 'on_cancel' HUP INT QUIT TERM
+
+post_build_status "$GITLAB_COMMIT_SHA" 'running' "$GITLAB_BUILD_SYSTEM_NAME" "$GITLAB_BUILD_URL"
+
+"$@" &
+wait "$(jobs -p)"

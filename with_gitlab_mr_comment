@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+set -eu
+
+this_dir="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=gitlab.bash
+source "$this_dir/gitlab.bash"
+
+require_envs
+: "${GITLAB_MR_IID?}"
+: "${GITLAB_MR_COMMENT_ON_START?}"
+: "${GITLAB_MR_COMMENT_ON_CANCEL?}"
+: "${GITLAB_MR_COMMENT_ON_SUCCESS?}"
+: "${GITLAB_MR_COMMENT_ON_FAIL?}"
+
+on_exit() {
+  exit_code="$?"
+  if test "$exit_code" = "0"; then
+    comment_on_merge_request "$GITLAB_MR_IID" "$GITLAB_MR_COMMENT_ON_SUCCESS"
+  else
+    comment_on_merge_request "$GITLAB_MR_IID" "$GITLAB_MR_COMMENT_ON_FAIL"
+  fi
+  return "$exit_code"
+}
+
+on_cancel() {
+  comment_on_merge_request "$GITLAB_MR_IID" "$GITLAB_MR_COMMENT_ON_CANCEL"
+  trap -- EXIT
+  trap -- TERM
+  kill -s TERM $$
+}
+
+trap 'on_exit' EXIT
+trap 'on_cancel' HUP INT QUIT TERM
+
+comment_on_merge_request "$GITLAB_MR_IID" "$GITLAB_MR_COMMENT_ON_START"
+
+"$@" &
+wait "$(jobs -p)"

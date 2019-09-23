@@ -1,12 +1,35 @@
-# GitLab API Client for Bash
+# Bash scripts for CI
 
-## Usage
+## Use case
+
+- Run command (e.g. start Jenkins job) and verify source code when merge request is created.
+  - Note that you need job management system because scripts below don't manage job execution.
+- Run verification command as external pipeline job on GitLab, and comment result on merge request.
+
+
+## Requirements
+
+- Bash
+- cURL
+- jq
+
+
+## GitLab
 
 Set environment variables.
 ```sh
 export GITLAB_BASE_URL="https://gitlab.com"
 export GITLAB_PRIVATE_TOKEN="your token"   # https://gitlab.com/profile/personal_access_tokens
 export GITLAB_PROJECT_ID="your project id"
+```
+
+List merge requests.
+```sh
+# List opened MR (default)
+./gitlab_cli list_merge_requests | jq .
+
+# Filter by date
+./gitlab_cli list_merge_requests | jq "map(select(.updated_at > \"2019-09-23T09:00:00.000Z\"))"
 ```
 
 Run command when merge request is created / updated.
@@ -16,7 +39,7 @@ hooks=$(cat << 'EOF'
   {
     "id": "test",
     "filter": ".labels[] | contains(\"test\")",
-    "cmd": "echo \"id: $MERGE_REQUEST_IID source: $SOURCE_BRANCH -> target: $TARGET_BRANCH\""
+    "cmd": "echo \"id: $MERGE_REQUEST_IID source: $SOURCE_BRANCH -> target: $TARGET_BRANCH ($MERGE_REQUEST_URL)\""
   },
   {
     "id": "test-jenkins",
@@ -26,55 +49,64 @@ hooks=$(cat << 'EOF'
 ]
 EOF
 )
-export GITLAB_MR_HOOK_LOGDIR=hook_log  # Save log to avoid double execution.
-./gitlab list_merge_requests | ./gitlab hook_merge_requests <(echo "$hooks")
+
+./gitlab_cli list_merge_requests \
+  | env GITLAB_MR_HOOK_LOGDIR=hook_log ./gitlab_cli hook_merge_requests <(echo "$hooks")
 ```
 
 - `filter` : [jq](https://stedolan.github.io/jq/manual/) filter to select merge request to hook.
 - `cmd` : Command you want to execute when merge request is created / updated.
-  - `$MERGE_REQUEST_IID`, `$SOURCE_BRANCH`, `$TARGET_BRANCH` are automatically set.
+  - Environment variables `$MERGE_REQUEST_IID`, `$SOURCE_BRANCH`, `$TARGET_BRANCH`, and `$MERGE_REQUEST_URL` are automatically set.
 
 
-Run command as Pipeline job.
+Run command as GitLab Pipeline job.
 ```sh
-export GITLAB_COMMIT_SHA="43127becfba9ffdc52715c006c1d36eeef8fb8ef"
-export GITLAB_BUILD_SYSTEM_NAME="Jenkins"
-export GITLAB_BUILD_URL="http://localhost/jenkins/job/test/1"
-./gitlab with_pipeline make build
+env GITLAB_COMMIT_SHA="43127becfba9ffdc52715c006c1d36eeef8fb8ef" \
+    GITLAB_BUILD_SYSTEM_NAME="Jenkins" \
+    GITLAB_BUILD_URL="http://localhost/jenkins/job/test/1" \
+    ./with_gitlab_pipeline make lint
 ```
 
 Run command and comment result on merge request.
 ```sh
-export GITLAB_MR_IID="3"
-export GITLAB_MR_COMMENT_ON_START=":rocket: Build started."
-export GITLAB_MR_COMMENT_ON_SUCCESS=":smile_cat: Build success."
-export GITLAB_MR_COMMENT_ON_FAIL=":crying_cat_face: Build failed."
-./gitlab with_merge_request_comment make build
+env GITLAB_MR_IID="3" \
+    GITLAB_MR_COMMENT_ON_START=":rocket: Build started." \
+    GITLAB_MR_COMMENT_ON_SUCCESS=":smile_cat: Build success." \
+    GITLAB_MR_COMMENT_ON_FAIL=":crying_cat_face: Build failed." \
+    GITLAB_MR_COMMENT_ON_CANCEL=":crying_cat_face: Build canceled." \
+    ./with_gitlab_mr_comment make lint
 ```
 
-Pipeline & Comment
+Combine Pipeline & Comment
 ```sh
-export GITLAB_COMMIT_SHA="43127becfba9ffdc52715c006c1d36eeef8fb8ef"
-export GITLAB_BUILD_SYSTEM_NAME="Jenkins"
-export GITLAB_BUILD_URL="http://localhost/jenkins/job/test/1"
-export GITLAB_MR_IID="3"
-export GITLAB_MR_COMMENT_ON_START=":rocket: Build started."
-export GITLAB_MR_COMMENT_ON_SUCCESS=":smile_cat: Build success."
-export GITLAB_MR_COMMENT_ON_FAIL=":crying_cat_face: Build failed."
-./gitlab with_pipeline ./gitlab with_merge_request_comment make build
+env GITLAB_COMMIT_SHA="43127becfba9ffdc52715c006c1d36eeef8fb8ef" \
+    GITLAB_BUILD_SYSTEM_NAME="Jenkins" \
+    GITLAB_BUILD_URL="http://localhost/jenkins/job/test/1" \
+    GITLAB_MR_IID="3" \
+    GITLAB_MR_COMMENT_ON_START=":rocket: Build started." \
+    GITLAB_MR_COMMENT_ON_SUCCESS=":smile_cat: Build success." \
+    GITLAB_MR_COMMENT_ON_FAIL=":crying_cat_face: Build failed." \
+    GITLAB_MR_COMMENT_ON_CANCEL=":crying_cat_face: Build canceled." \
+    ./with_gitlab_pipeline ./with_gitlab_mr_comment make lint
 ```
 
-Run command and send slack message.
-```sh
-export SLACK_API_TOKEN="your token"
-export SLACK_CHANNEL="general"
-export SLACK_MESSAGE_ON_SUCCESS=":smile_cat: Success"
-export SLACK_MESSAGE_ON_FAIL=":crying_cat_face: Fail"
-./slack with_message make build
-```
 
-Get slack user id from commit log.
+## Slack
+
+Set environment variables.
 ```sh
 export SLACK_API_TOKEN="your token"
-./slack email2userid "$(git log -1 --pretty=format:'%ae')"
+```
+
+Run command and send Slack message.
+```sh
+env SLACK_CHANNEL="general" \
+    SLACK_MESSAGE_ON_SUCCESS=":smile_cat: success" \
+    SLACK_MESSAGE_ON_FAIL=":crying_cat_face: fail" \
+    ./with_slack_message make lint
+```
+
+Get Slack user id from commit log.
+```sh
+./slack_cli email2userid "$(git log -1 --pretty=format:'%ae')"
 ```

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -eu
+
+this_dir="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=slack.bash
+source "$this_dir/slack.bash"
+
+"$@"

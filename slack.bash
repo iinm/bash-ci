@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 
-set -eu
-
 post_message() {
   : "${SLACK_API_TOKEN:?}"
   : "${SLACK_USER_NAME:="Bot"}"
-  : "${SLACK_USER_ICON:="https://image.flaticon.com/icons/png/512/57/57369.png"}"
+  : "${SLACK_USER_ICON:="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/GNOME_Builder_Icon_%28hicolor%29.svg/240px-GNOME_Builder_Icon_%28hicolor%29.svg.png"}"
   channel=${1:?}
   text=${2:?}
 
@@ -27,35 +25,17 @@ EOS
       --arg text "$text" \
       "$body_template"
   )
-  curl -X POST 'https://slack.com/api/chat.postMessage' \
+  curl -Sfs -X POST 'https://slack.com/api/chat.postMessage' \
     -H "Authorization: Bearer $SLACK_API_TOKEN" \
     -H "Content-type: application/json; charset=utf-8" \
     -d "$body"
 }
 
-with_message() {
-  : "${SLACK_CHANNEL?}"
-  : "${SLACK_MESSAGE_ON_SUCCESS?}"
-  : "${SLACK_MESSAGE_ON_FAIL?}"
-
-  return_code="0"
-  if "$@"; then
-    return_code="$?"
-    post_message "$SLACK_CHANNEL" "$SLACK_MESSAGE_ON_SUCCESS"
-  else
-    return_code="$?"
-    post_message "$SLACK_CHANNEL" "$SLACK_MESSAGE_ON_FAIL"
-  fi
-  return "$return_code"
-}
-
 email2userid() {
+  : "${SLACK_API_TOKEN:?}"
   email="${1?}"
-  curl -s -X GET \
+  curl -Sfs -X GET \
     'https://slack.com/api/users.list' \
     -H "Authorization: Bearer $SLACK_API_TOKEN" \
     | jq -r ".members | map(select(.profile.email == \"$email\")) | .[0].id"
 }
-
-
-"$@"
