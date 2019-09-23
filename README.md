@@ -110,3 +110,37 @@ Get Slack user id from commit log.
 ```sh
 ./slack_cli email2userid "$(git log -1 --pretty=format:'%ae')"
 ```
+
+Post message.
+```sh
+./slack_cli post_message << EOF
+{
+  "as_user": false,
+  "username": "Bot",
+  "icon_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/GNOME_Builder_Icon_%28hicolor%29.svg/240px-GNOME_Builder_Icon_%28hicolor%29.svg.png",
+  "channel": "general",
+  "blocks": [
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": ":smile_cat: Build success!"
+      }
+    },
+    {
+      "type": "section",
+      "fields": [
+        {
+          "type": "mrkdwn",
+          "text": "*<https://google.com|GitLab MR>*"
+        },
+        {
+          "type": "mrkdwn",
+          "text": "*<https://google.com|Jenkins>*"
+        }
+      ]
+    }
+  ]
+}
+EOF
+```

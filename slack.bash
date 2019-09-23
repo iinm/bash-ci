@@ -12,7 +12,7 @@ post_text_message() {
       "as_user": false,
       "username": $username,
       "icon_url": $icon,
-      "channel": $channel ,
+      "channel": $channel,
       "text": $text
     }
 EOS
@@ -29,6 +29,14 @@ EOS
     -H "Authorization: Bearer $SLACK_API_TOKEN" \
     -H "Content-type: application/json; charset=utf-8" \
     -d "$body"
+}
+
+post_message() {
+  : "${SLACK_API_TOKEN:?}"
+  curl -Sfs -X POST 'https://slack.com/api/chat.postMessage' \
+    -H "Authorization: Bearer $SLACK_API_TOKEN" \
+    -H "Content-type: application/json; charset=utf-8" \
+    -d @-
 }
 
 email2userid() {
