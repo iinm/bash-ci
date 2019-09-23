@@ -20,7 +20,7 @@ post_message_if_not_empty() {
   channel="${1?}"
   message="${2?}"
   if test -n "$message"; then
-    post_message "$channel" "$message"
+    post_text_message "$channel" "$message"
   fi
 }
 

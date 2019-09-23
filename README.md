@@ -101,8 +101,8 @@ export SLACK_API_TOKEN="your token"
 Run command and send Slack message.
 ```sh
 env SLACK_CHANNEL="general" \
-    SLACK_MESSAGE_ON_SUCCESS=":smile_cat: success" \
-    SLACK_MESSAGE_ON_FAIL=":crying_cat_face: fail" \
+    SLACK_MESSAGE_ON_SUCCESS=":smile_cat: Success" \
+    SLACK_MESSAGE_ON_FAIL=":crying_cat_face: Fail" \
     ./with_slack_message make lint
 ```
 

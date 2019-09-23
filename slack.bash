@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-post_message() {
+post_text_message() {
   : "${SLACK_API_TOKEN:?}"
   : "${SLACK_USER_NAME:="Bot"}"
   : "${SLACK_USER_ICON:="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/GNOME_Builder_Icon_%28hicolor%29.svg/240px-GNOME_Builder_Icon_%28hicolor%29.svg.png"}"
