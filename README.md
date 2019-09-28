@@ -2,16 +2,16 @@
 
 ## Use case
 
-- Run command (e.g. start Jenkins job) and verify source code when merge request is created.
-  - Note that you need job management system because scripts below don't manage job execution.
+- Verify source code when merge request is created.
+  - Note that you need job queue like [Task Spooler](https://vicerveza.homeunix.net/~viric/soft/ts/).
 - Run verification command as external pipeline job on GitLab, and comment result on merge request.
 
 
 ## Requirements
 
-- Bash
-- cURL
-- jq
+- [Bash](https://www.gnu.org/software/bash/)
+- [cURL](https://curl.haxx.se/)
+- [jq](https://stedolan.github.io/jq/)
 
 
 ## GitLab
@@ -45,6 +45,11 @@ hooks=$(cat << 'EOF'
     "id": "test-jenkins",
     "filter": ".labels[] | contains(\"jenkins-test\")",
     "cmd": "curl -X POST -u $JENKINS_AUTH \"http://localhost/jenkins/job/test/buildWithParameters?SOURCE_BRANCH=$SOURCE_BRANCH&TARGET_BRANCH=$TARGET_BRANCH&MERGE_REQUEST_IID=$MERGE_REQUEST_IID\""
+  },
+  {
+    "id": "test-ts",
+    "filter": ".labels[] | contains(\"ts-test\")",
+    "cmd": "tsp make lint"
   }
 ]
 EOF
@@ -54,6 +59,7 @@ EOF
   | env GITLAB_MR_HOOK_LOGDIR=hook_log ./gitlab_cli hook_merge_requests <(echo "$hooks")
 ```
 
+- `id` : Hook id must be unique.
 - `filter` : [jq](https://stedolan.github.io/jq/manual/) filter to select merge request to hook.
 - `cmd` : Command you want to execute when merge request is created / updated.
   - Environment variables `$MERGE_REQUEST_IID`, `$SOURCE_BRANCH`, `$TARGET_BRANCH`, and `$MERGE_REQUEST_URL` are automatically set.
