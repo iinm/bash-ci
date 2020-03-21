@@ -80,11 +80,11 @@ hook_merge_request() {
 
   return_code="0"
   for hook_json in $(jq -c '.[]' < "$hooks_json_file"); do
-    id="$(echo "$hook_json" | jq -r '.id')"
-    filter="$(echo "$hook_json" | jq -r '.filter')"
-    cmd="$(echo "$hook_json" | jq -r '.cmd')"
+    hook_id="$(echo "$hook_json" | jq -r '.id')"
+    hook_filter="$(echo "$hook_json" | jq -r '.filter')"
+    hook_cmd="$(echo "$hook_json" | jq -r '.cmd')"
 
-    if test "$(echo "$merge_request_json" | jq "$filter")" = 'true'; then
+    if test "$(echo "$merge_request_json" | jq "$hook_filter")" = 'true'; then
       log "$(echo "$hook_json" | jq -r '"Hook \"\(.id)\" is matched.  Run \"\(.cmd)\""')"
 
       merge_request_iid="$(echo "$merge_request_json" | jq -r '.iid')"
@@ -94,18 +94,19 @@ hook_merge_request() {
       merge_request_url="$(echo "$merge_request_json" | jq -r '.web_url')"
 
       commit_sha_short="${commit_sha:0:7}"
-      log_file="$GITLAB_MR_HOOK_LOGDIR/$id.$commit_sha_short.log"
+      log_file="$GITLAB_MR_HOOK_LOGDIR/${hook_id}.${commit_sha_short}.log"
 
       if test -f "$log_file"; then
         log "=> SKIP.  Log file aleady exists.  See $log_file"
+        continue
+      fi
 
-      elif env MERGE_REQUEST_IID="$merge_request_iid" \
+      if env MERGE_REQUEST_IID="$merge_request_iid" \
              SOURCE_BRANCH="$source_branch" \
              TARGET_BRANCH="$target_branch" \
              MERGE_REQUEST_URL="$merge_request_url" \
-             "$SHELL" <(echo "$cmd") &> "$log_file"; then
+             "$SHELL" <(echo "$hook_cmd") &> "$log_file"; then
         log "=> SUCCESS.  See $log_file"
-
       else
         return_code="$?"
         log "=> FAILED.  See $log_file"
