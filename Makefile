@@ -1,4 +1,4 @@
-scripts := $(shell grep -lr '\#!/usr/bin/env bash' | grep -v Makefile)
+scripts := $(shell grep -lr '\#!/usr/bin/env bash' . | grep -v Makefile)
 
 .PHONY: all
 all: ;

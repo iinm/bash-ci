@@ -116,3 +116,29 @@ hook_merge_request() {
 
   return "$return_code"
 }
+
+merge_request_json_for_jenkins() {
+  : "${MERGE_REQUEST_IID?}"
+  : "${SOURCE_BRANCH?}"
+  : "${TARGET_BRANCH?}"
+  : "${MERGE_REQUEST_URL?}"
+  
+  template=$(cat << 'EOS'
+    {
+      "parameter": [
+        { "name": "MERGE_REQUEST_IID", "value": $merge_request_iid },
+        { "name": "SOURCE_BRANCH",     "value": $source_branch },
+        { "name": "TARGET_BRANCH",     "value": $target_branch },
+        { "name": "MERGE_REQUEST_URL", "value": $merge_request_url }
+      ]
+    }
+EOS
+)
+  
+  jq -n -c \
+    --arg merge_request_iid "$MERGE_REQUEST_IID" \
+    --arg source_branch "$SOURCE_BRANCH" \
+    --arg target_branch "$TARGET_BRANCH" \
+    --arg merge_request_url "$MERGE_REQUEST_URL" \
+    "$template"
+}
