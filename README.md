@@ -34,29 +34,28 @@ List merge requests.
 
 Run command when merge request is created / updated.
 ```sh
-hooks=$(cat << 'EOF'
+cat << 'EOF' > ./hooks.json
 [
   {
     "id": "test",
-    "filter": ".labels[] | contains(\"test\")",
+    "filter": "contains({ labels: [\"test\"] })",
     "cmd": "echo \"id: $MERGE_REQUEST_IID source: $SOURCE_BRANCH -> target: $TARGET_BRANCH ($MERGE_REQUEST_URL)\""
   },
   {
-    "id": "test-jenkins",
-    "filter": ".labels[] | contains(\"jenkins-test\")",
-    "cmd": "curl -X POST -u $JENKINS_AUTH \"http://localhost/jenkins/job/test/buildWithParameters?SOURCE_BRANCH=$SOURCE_BRANCH&TARGET_BRANCH=$TARGET_BRANCH&MERGE_REQUEST_IID=$MERGE_REQUEST_IID\""
+    "id": "jenkins-test",
+    "filter": "contains({ labels: [\"jenkins-test\"] })",
+    "cmd": "curl -X POST -u $JENKINS_AUTH 'http://localhost/job/test/build' -F json=\"$(./gitlab_cli merge_request_json_for_jenkins)\""
   },
   {
-    "id": "test-ts",
-    "filter": ".labels[] | contains(\"ts-test\")",
+    "id": "ts-test",
+    "filter": "contains({ labels: [\"ts-test\"] })",
     "cmd": "tsp make lint"
   }
 ]
 EOF
-)
 
 ./gitlab_cli list_merge_requests \
-  | env GITLAB_MR_HOOK_LOGDIR=hook_log ./gitlab_cli hook_merge_requests <(echo "$hooks")
+  | env GITLAB_MR_HOOK_LOGDIR=./hook_log ./gitlab_cli hook_merge_requests ./hooks.json
 ```
 
 - `id` : Hook id must be unique.
@@ -115,6 +114,11 @@ env SLACK_CHANNEL="general" \
 Get Slack user id from commit log.
 ```sh
 ./slack_cli email2userid "$(git log -1 --pretty=format:'%ae')"
+```
+
+Post text message.
+```sh
+./slack_cli post_text_message "#random" "Hello!"
 ```
 
 Post message.
