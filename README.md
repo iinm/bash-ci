@@ -38,17 +38,17 @@ cat << 'EOF' > ./hooks.json
 [
   {
     "id": "test",
-    "filter": "contains({ labels: [\"test\"] })",
+    "filter": ".labels | map(. == \"skip-ci\") | any | not",
     "cmd": "echo \"id: $MERGE_REQUEST_IID source: $SOURCE_BRANCH -> target: $TARGET_BRANCH ($MERGE_REQUEST_URL)\""
   },
   {
     "id": "jenkins-test",
-    "filter": "contains({ labels: [\"jenkins-test\"] })",
+    "filter": ".labels | map(. == \"jenkins-test\") | any",
     "cmd": "curl -X POST -u $JENKINS_AUTH 'http://localhost/job/test/build' -F json=\"$(./gitlab_cli merge_request_json_for_jenkins)\""
   },
   {
     "id": "ts-test",
-    "filter": "contains({ labels: [\"ts-test\"] })",
+    "filter": ".labels | map(. == \"jenkins-test\") | any",
     "cmd": "tsp make lint"
   }
 ]
