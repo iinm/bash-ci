@@ -66,7 +66,7 @@ EOF
 
 Run command as GitLab Pipeline job.
 ```sh
-env GITLAB_COMMIT_SHA="43127becfba9ffdc52715c006c1d36eeef8fb8ef" \
+env GITLAB_COMMIT_SHA="$(git log -n 1 --pretty=format:'%H')" \
     GITLAB_BUILD_SYSTEM_NAME="Jenkins" \
     GITLAB_BUILD_URL="http://localhost/jenkins/job/test/1" \
     ./with_gitlab_pipeline make lint
@@ -84,7 +84,7 @@ env GITLAB_MR_IID="3" \
 
 Combine Pipeline & Comment
 ```sh
-env GITLAB_COMMIT_SHA="43127becfba9ffdc52715c006c1d36eeef8fb8ef" \
+env GITLAB_COMMIT_SHA="$(git log -n 1 --pretty=format:'%H')" \
     GITLAB_BUILD_SYSTEM_NAME="Jenkins" \
     GITLAB_BUILD_URL="http://localhost/jenkins/job/test/1" \
     GITLAB_MR_IID="3" \
