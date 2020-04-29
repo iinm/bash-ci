@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+
+set -eu -o pipefail
+
+# for docker build
+: "${BUILD_PATH:="$(pwd)"}"
+: "${DOCKERFILE:="$BUILD_PATH/Dockerfile"}"
+: "${IMAGE_NAME:="$(basename "$BUILD_PATH"):latest"}"
+# for docker run
+: "${DOCKER_RUN_OPT:=""}"
+: "${TASK_ID:="$(tr -dc '[:alnum:]' < /dev/urandom | head -c 10)"}"
+: "${ARTIFACTS:=""}"
+: "${ARTIFACTS_SAVE_PATH:="$(pwd)/artifacts/$TASK_ID"}"
+
+: "${TMPDIR:="/tmp"}"
+: "${VERBOSE:="no"}" # yes or no
+: "${REMOVE_IMAGE_ON_EXIT:="no"}" # yes or no
+
+repository=$(echo "$IMAGE_NAME" | cut -d ':' -f 1)
+container_name=$repository.$TASK_ID
+workdir=$(pwd)
+host_workdir_mount_path=/host$workdir
+work_volume=$repository.work.$TASK_ID
+log_file=$TMPDIR/$0.$repository.$TASK_ID
+
+if test "$VERBOSE" = "yes"; then
+  touch "$log_file"
+  tail -f "$log_file" >&2 &
+fi
+
+log() {
+  now="$(date "+%Y-%m-%d %H:%M:%S")"
+  echo -e "$now" "$@" >> "$log_file"
+}
+
+with_logfile() {
+  "$@" &>> "$log_file"
+}
+
+show_log_if_not_verbose() {
+  if test "$VERBOSE" = "no"; then
+    cat "$log_file" >&2
+  fi
+}
+
+on_exit() {
+  exit_status="$?"
+  # copy artifacts to host directory
+  if test -n "$ARTIFACTS"; then
+    log "copy artifacts from docker volume to host directory; $ARTIFACTS -> $ARTIFACTS_SAVE_PATH"
+    mkdir -p "$ARTIFACTS_SAVE_PATH"
+    docker run --rm -w "$workdir" -v "$work_volume:$workdir" "$IMAGE_NAME" tar -cf - $ARTIFACTS \
+      | tar -C "$ARTIFACTS_SAVE_PATH" -xf -
+  fi
+  # remove work volume
+  if docker volume inspect "$work_volume" &> /dev/null; then
+    log "remove work volume, $work_volume"
+    with_logfile docker volume rm "$work_volume"
+  fi
+  # remove work volume
+  if test "$REMOVE_IMAGE_ON_EXIT" = "yes" \
+    && docker image inspect "$IMAGE_NAME" &> /dev/null; then
+    log "remove image, $IMAGE_NAME"
+    with_logfile docker image rm "$IMAGE_NAME"
+  fi
+  # kill subprocess
+  if test -n "$(jobs -p)"; then kill "$(jobs -p)"; fi 
+  # remove log file
+  rm "$log_file"
+  return "$exit_status"
+}
+
+trap 'on_exit' EXIT
+
+log "build docker image, $IMAGE_NAME"
+if ! with_logfile docker build -f "$DOCKERFILE" -t "$IMAGE_NAME" "${BUILD_PATH}" < /dev/null; then
+  log "error: failed to build image"
+  show_log_if_not_verbose
+  exit 1
+fi
+
+if docker volume inspect "$work_volume" &> /dev/null; then
+  log "remove work volume, $work_volume"
+  with_logfile docker volume rm "$work_volume"
+fi
+
+log "copy $workdir to docker volume, $work_volume"
+copy_workdir_to_volume_cmd="tar -C $host_workdir_mount_path -cf - \$(cd $host_workdir_mount_path && find . ! -path . -maxdepth 1) | tar -C $workdir -xf -"
+if ! with_logfile docker run --rm --name "$container_name" \
+  -v "$workdir:$host_workdir_mount_path:ro" \
+  -v "$work_volume:$workdir" \
+  "$IMAGE_NAME" \
+  sh -c "$copy_workdir_to_volume_cmd"; then
+  log "error: failed to setup work volume"
+  show_log_if_not_verbose
+  exit 1
+fi
+
+log "run \"$*\" on container, $container_name"
+docker run --rm -i --name "$container_name" -w "$workdir" \
+  -v "$work_volume:$workdir" \
+  $DOCKER_RUN_OPT \
+  "$IMAGE_NAME" \
+  "$@"
