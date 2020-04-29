@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-set -eu
-
-this_dir="$(cd "$(dirname "$0")" && pwd)"
-# shellcheck source=gitlab.bash
-source "$this_dir/gitlab.bash"
-
-"$@"

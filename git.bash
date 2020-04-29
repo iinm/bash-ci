@@ -13,3 +13,9 @@ has_remote_update() {
   local_sha="$(git rev-parse "$branch" || echo '')"
   test "$remote_sha" != "$local_sha"
 }
+
+
+if test "$#" -ge 1; then
+  set -eu -o pipefail
+  "$@"
+fi

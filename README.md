@@ -26,10 +26,10 @@ export GITLAB_PROJECT_ID="your project id"
 List merge requests.
 ```sh
 # List opened MR (default)
-./gitlab_cli list_merge_requests | jq .
+./gitlab.bash list_merge_requests | jq .
 
 # Filter by date
-./gitlab_cli list_merge_requests | jq "map(select(.updated_at > \"2019-09-23T09:00:00.000Z\"))"
+./gitlab.bash list_merge_requests | jq "map(select(.updated_at > \"2019-09-23T09:00:00.000Z\"))"
 ```
 
 Run command when merge request is created / updated.
@@ -44,7 +44,7 @@ cat << 'EOF' > ./hooks.json
   {
     "id": "jenkins-test",
     "filter": ".labels | map(. == \"jenkins-test\") | any",
-    "cmd": "curl -X POST -u $JENKINS_AUTH 'http://localhost/job/test/build' -F json=\"$(./gitlab_cli merge_request_json_for_jenkins)\""
+    "cmd": "curl -X POST -u $JENKINS_AUTH 'http://localhost/job/test/build' -F json=\"$(./gitlab.bash merge_request_json_for_jenkins)\""
   },
   {
     "id": "ts-test",
@@ -54,8 +54,8 @@ cat << 'EOF' > ./hooks.json
 ]
 EOF
 
-./gitlab_cli list_merge_requests \
-  | env GITLAB_MR_HOOK_LOGDIR=./hook_log ./gitlab_cli hook_merge_requests ./hooks.json
+./gitlab.bash list_merge_requests \
+  | env GITLAB_MR_HOOK_LOGDIR=./hook_log ./gitlab.bash hook_merge_requests ./hooks.json
 ```
 
 - `id` : Hook id must be unique.
@@ -113,17 +113,17 @@ env SLACK_CHANNEL="general" \
 
 Get Slack user id from commit log.
 ```sh
-./slack_cli email2userid "$(git log -1 --pretty=format:'%ae')"
+./slack.bash email2userid "$(git log -1 --pretty=format:'%ae')"
 ```
 
 Post text message.
 ```sh
-./slack_cli post_text_message "#random" "Hello!"
+./slack.bash post_text_message "#random" "Hello!"
 ```
 
 Post message.
 ```sh
-./slack_cli post_message << EOF
+./slack.bash post_message << EOF
 {
   "as_user": false,
   "username": "Bot",

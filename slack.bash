@@ -47,3 +47,9 @@ email2userid() {
     -H "Authorization: Bearer $SLACK_API_TOKEN" \
     | jq -r ".members | map(select(.profile.email == \"$email\")) | .[0].id"
 }
+
+
+if test "$#" -ge 1; then
+  set -eu -o pipefail
+  "$@"
+fi

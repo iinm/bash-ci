@@ -142,3 +142,9 @@ EOS
     --arg merge_request_url "$MERGE_REQUEST_URL" \
     "$template"
 }
+
+
+if test "$#" -ge 1; then
+  set -eu -o pipefail
+  "$@"
+fi
