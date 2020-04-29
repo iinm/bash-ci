@@ -1,17 +1,25 @@
 # Bash scripts for CI
 
-## Use case
-
-- Verify source code when merge request is created.
-  - Note that you need job queue like [Task Spooler](https://vicerveza.homeunix.net/~viric/soft/ts/).
-- Run verification command as external pipeline job on GitLab, and comment result on merge request.
-
-
 ## Requirements
 
 - [Bash](https://www.gnu.org/software/bash/)
 - [cURL](https://curl.haxx.se/)
 - [jq](https://stedolan.github.io/jq/)
+- [Docker](https://www.docker.com)
+
+
+## Docker
+
+Run command on container.
+```sh
+VERBOSE=yes TASK_ID=lint ./with_dockerfile make lint
+```
+
+Run command on container and copy artifacts from docker volume to host directory.
+```sh
+VERBOSE=yes TASK_ID=lint ARTIFACTS=./out.txt ./with_dockerfile sh -c 'make lint > out.txt'
+cat ./artifacts/lint/out.txt
+```
 
 
 ## GitLab
