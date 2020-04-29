@@ -12,13 +12,13 @@ require_envs
 : "${GITLAB_BUILD_URL?}"
 
 on_exit() {
-  exit_code="$?"
-  if test "$exit_code" = "0"; then
+  exit_status="$?"
+  if test "$exit_status" -eq 0; then
     post_build_status "$GITLAB_COMMIT_SHA" 'success' "$GITLAB_BUILD_SYSTEM_NAME" "$GITLAB_BUILD_URL"
   else
     post_build_status "$GITLAB_COMMIT_SHA" 'failed' "$GITLAB_BUILD_SYSTEM_NAME" "$GITLAB_BUILD_URL"
   fi
-  return "$exit_code"
+  return "$exit_status"
 }
 
 on_cancel() {

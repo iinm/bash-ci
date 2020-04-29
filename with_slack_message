@@ -25,13 +25,13 @@ post_message_if_not_empty() {
 }
 
 on_exit() {
-  exit_code="$?"
-  if test "$exit_code" = "0"; then
+  exit_status="$?"
+  if test "$exit_status" -eq 0; then
     post_message_if_not_empty "$SLACK_CHANNEL" "$SLACK_MESSAGE_ON_SUCCESS"
   else
     post_message_if_not_empty "$SLACK_CHANNEL" "$SLACK_MESSAGE_ON_FAIL"
   fi
-  return "$exit_code"
+  return "$exit_status"
 }
 
 on_cancel() {
