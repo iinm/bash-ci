@@ -2,7 +2,7 @@
 
 log() {
   now="$(date "+%Y-%m-%d %H:%M:%S")"
-  echo "[$now]" "$@"
+  echo "$now" "$@"
 }
 
 require_envs() {
