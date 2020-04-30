@@ -5,19 +5,24 @@
 - [Bash](https://www.gnu.org/software/bash/)
 - [cURL](https://curl.haxx.se/)
 - [jq](https://stedolan.github.io/jq/)
-- [Docker](https://www.docker.com)
 
 
 ## Docker
 
-Run command on container.
+Run command on container. (Assume you have Dockerfile)
 ```sh
-VERBOSE=yes TASK_ID=lint ./with_dockerfile make lint
+env VERBOSE=yes TASK_ID=lint ./with_dockerfile make lint
+```
+
+```sh
+mkdir -p ./tmp/with_dockerfile_exmaple
+echo "FROM busybox" > ./tmp/with_dockerfile_exmaple/Dockerfile
+env VERBOSE=yes BUILD_PATH=./tmp/with_dockerfile_exmaple ./with_dockerfile busybox
 ```
 
 Run command on container and copy artifacts from docker volume to host directory.
 ```sh
-VERBOSE=yes TASK_ID=lint ARTIFACTS=./out.txt ./with_dockerfile sh -c 'make lint > out.txt'
+env VERBOSE=yes TASK_ID=lint ARTIFACTS=./out.txt ./with_dockerfile sh -c 'make lint > out.txt'
 cat ./artifacts/lint/out.txt
 ```
 
