@@ -5,25 +5,38 @@
 - [Bash](https://www.gnu.org/software/bash/)
 - [cURL](https://curl.haxx.se/)
 - [jq](https://stedolan.github.io/jq/)
+- [Docker](https://www.docker.com/) (Optional)
 
 
 ## Docker
 
 Run command on container. (Assume you have Dockerfile)
 ```sh
-env VERBOSE=yes TASK_ID=lint ./with_dockerfile make lint
+./with_dockerfile --verbose make lint
 ```
 
 ```sh
 mkdir -p ./tmp/with_dockerfile_exmaple
 echo "FROM busybox" > ./tmp/with_dockerfile_exmaple/Dockerfile
-env VERBOSE=yes BUILD_PATH=./tmp/with_dockerfile_exmaple ./with_dockerfile busybox
+./with_dockerfile --verbose --build-path ./tmp/with_dockerfile_exmaple ls -lh
 ```
 
 Run command on container and copy artifacts from docker volume to host directory.
 ```sh
-env VERBOSE=yes TASK_ID=lint ARTIFACTS=./out.txt ./with_dockerfile sh -c 'make lint > out.txt'
-cat ./artifacts/lint/out.txt
+mkdir -p ./tmp/with_dockerfile_exmaple
+echo "FROM busybox" > ./tmp/with_dockerfile_exmaple/Dockerfile
+./with_dockerfile --verbose --build-path ./tmp/with_dockerfile_exmaple \
+  --task-id 'ls' --artifact out.txt sh -c 'ls -lh > out.txt'
+cat ./artifacts/ls/out.txt
+```
+
+Use docker volume as cache.
+```sh
+mkdir -p ./tmp/with_dockerfile_exmaple
+echo "FROM node:current-alpine" > ./tmp/with_dockerfile_exmaple/Dockerfile
+./with_dockerfile --verbose --build-path ./tmp/with_dockerfile_exmaple \
+  --task-id 'node-example' --run-opts '-v npm-user-cache:/root/.npm' \
+  sh -c 'npm install ramda; ls -lh ./node_modules'
 ```
 
 
