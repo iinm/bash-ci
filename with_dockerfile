@@ -8,7 +8,7 @@ set -eu -o pipefail
 : "${IMAGE_NAME:="$(basename "$BUILD_PATH"):latest"}"
 # for docker run
 : "${DOCKER_RUN_OPT:=""}"
-: "${TASK_ID:="$(tr -dc '[:alnum:]' < /dev/urandom | head -c 10)"}"
+: "${TASK_ID:="$(env LC_CTYPE=C tr -dc '[:alnum:]' < /dev/urandom | head -c 10)"}"
 : "${ARTIFACTS:=""}"
 : "${ARTIFACTS_SAVE_PATH:="$(pwd)/artifacts/$TASK_ID"}"
 
