@@ -2,9 +2,9 @@
 
 set -eu -o pipefail
 
-this_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=gitlab.bash
-source "$this_dir/gitlab.bash"
+source "$script_dir/gitlab.bash"
 
 require_envs
 : "${GITLAB_MR_IID?}"
