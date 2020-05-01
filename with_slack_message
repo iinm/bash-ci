@@ -2,6 +2,10 @@
 
 set -eu -o pipefail
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=slack.bash
+source "$script_dir/slack.bash"
+
 help() {
   cat << 'HELP'
 Usage: with_slack_message --channel CHANNEL
@@ -21,10 +25,6 @@ Run command and post slack message
   --user-icon           Slack user icon
 HELP
 }
-
-this_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=slack.bash
-source "$this_dir/slack.bash"
 
 channel=
 message_on_start=
@@ -52,9 +52,7 @@ while true; do
   esac
 done
 
-# Verify environment and arguments
 : "${SLACK_API_TOKEN?}"
-
 if test -z "$channel"; then
   help >&2
   exit 1
@@ -64,7 +62,7 @@ post_message_if_not_empty() {
   local channel="${1?}"
   local message="${2?}"
   if test -n "$message"; then
-    post_text_message --channel "$channel" --message "$message" \
+    post_text_message --channel "$channel" --text "$message" \
       --user-name "$user_name" --user-icon "$user_icon"
   fi
 }
