@@ -1,6 +1,7 @@
 # Bash scripts for CI
 
-https://github.com/iinm/bash-ci/workflows/verify/badge.svg
+![](https://github.com/iinm/bash-ci/workflows/verify/badge.svg?branch=master)
+
 
 ## Requirements
 
