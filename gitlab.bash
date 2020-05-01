@@ -20,8 +20,20 @@ list_merge_requests() {
 # https://docs.gitlab.com/ee/api/notes.html#create-new-merge-request-note
 comment_on_merge_request() {
   require_envs
-  local merge_request_iid="${1?}"
-  local comment="${2?}"
+  local merge_request_iid comment
+  while true; do
+    if test "$#" -eq 0; then
+      break
+    fi
+    case "$1" in
+      --iid ) merge_request_iid=$2; shift 2 ;;
+      --comment ) comment=$2; shift 2 ;;
+      * ) break ;;
+    esac
+  done
+  : "${merge_request_iid?}"
+  : "${comment?}"
+
   log "Comment on MR; merge_request_iid: $merge_request_iid, comment: $comment"
   curl --silent --show-error --fail -X POST \
     -H "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
@@ -32,10 +44,23 @@ comment_on_merge_request() {
 # https://docs.gitlab.com/ee/api/commits.html#post-the-build-status-to-a-commit
 post_build_status() {
   require_envs
-  local sha="${1?}"
-  local state="${2?}"
-  local name="${3?}"
-  local target_url="${4?}"
+  local sha state name target_url
+  while true; do
+    if test "$#" -eq 0; then
+      break
+    fi
+    case "$1" in
+      --sha ) sha=$2; shift 2 ;;
+      --state ) state=$2; shift 2 ;;
+      --name ) name=$2; shift 2 ;;
+      --target-url ) target_url=$2; shift 2 ;;
+      * ) break ;;
+    esac
+  done
+  : "${sha?}"
+  : "${state?}"
+  : "${name?}"
+  : "${target_url?}"
 
   if ! (echo "$state" | grep -qE '^(pending|running|success|failed|canceled)$'); then
     echo "error: Invalid state" >&2
