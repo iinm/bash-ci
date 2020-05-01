@@ -14,7 +14,7 @@ echo "case: show help message"
 ./with_slack_message --help | grep -qE "^Usage"
 
 
-echo "case: post start on start and success message on success"
+echo "case: post start message on start and success message on success"
 (
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$slack_api_port")
   body=$(echo "$req" | gawk '/^{/,/^}/')
