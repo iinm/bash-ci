@@ -27,46 +27,36 @@ Run command on container using Dockerfile
 HELP
 }
 
-verbose="no"
-build_path=$(pwd)
-dockerfile=$build_path/Dockerfile
-image_name=$(basename "$build_path"):latest
-run_opts=
-task_id=$(env LC_CTYPE=C tr -dc '[:alnum:]' < /dev/urandom | head -c 10 || true)
 artifacts=()
-artifacts_save_path=$(pwd)/artifacts/$task_id
-remove_image_on_exit="no"
 
 while true; do
   if test "$#" -eq 0; then
     help >&2
     exit 1
   fi
-
   case "$1" in
-    --help )
-      help; exit 0 ;;
-    --verbose )
-      verbose="yes"; shift ;;
-    --build-path )
-      build_path=$2; dockerfile=$build_path/Dockerfile; shift 2 ;;
-    --dockerfile )
-      dockerfile=$2; shift 2 ;;
-    --image-name )
-      image_name=$2; shift 2 ;;
-    --run-opts )
-      IFS=" " read -r -a run_opts <<< "$2"; shift 2 ;;
-    --task-id )
-      task_id=$2; shift 2 ;;
-    --artifact )
-      artifacts=("${artifacts[@]}" "$2"); shift 2 ;;
-    --artifacts-save-path )
-      artifacts_save_path=$2; shift 2 ;;
-    --remove-image-on-exit )
-      remove_image_on_exit="yes"; shift ;;
+    --help                 ) help; exit 0 ;;
+    --verbose              ) verbose="yes"; shift ;;
+    --build-path           ) build_path=$2 shift 2 ;;
+    --dockerfile           ) dockerfile=$2; shift 2 ;;
+    --image-name           ) image_name=$2; shift 2 ;;
+    --run-opts             ) IFS=" " read -r -a run_opts <<< "$2"; shift 2 ;;
+    --task-id              ) task_id=$2; shift 2 ;;
+    --artifact             ) artifacts=("${artifacts[@]}" "$2"); shift 2 ;;
+    --artifacts-save-path  ) artifacts_save_path=$2; shift 2 ;;
+    --remove-image-on-exit ) remove_image_on_exit="yes"; shift ;;
     * ) break ;;
   esac
 done
+
+: "${verbose:="no"}"
+: "${build_path:="$(pwd)"}"
+: "${dockerfile:="$build_path/Dockerfile"}"
+: "${image_name:="$(basename "$build_path"):latest"}"
+: "${run_opts:=}"
+: "${task_id:="$(env LC_CTYPE=C tr -dc '[:alnum:]' < /dev/urandom | head -c 10 || true)"}"
+: "${artifacts_save_path:="$(pwd)/artifacts/$task_id"}"
+: "${remove_image_on_exit:="no"}"
 
 repository=$(echo "$image_name" | cut -d ':' -f 1)
 container_name=$repository.$task_id

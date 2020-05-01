@@ -17,30 +17,28 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=gitlab.bash
 source "$script_dir/gitlab.bash"
 
-iid=
-comment_on_start=
-comment_on_cancel=
-comment_on_success=
-comment_on_fail=
-
 while true; do
   if test "$#" -eq 0; then
     help >&2
     exit 1
   fi
   case "$1" in
-    --help ) help; exit 0 ;;
-    --iid ) iid=$2; shift 2 ;;
-    --comment-on-start ) comment_on_start=$2; shift 2 ;;
-    --comment-on-cancel ) comment_on_cancel=$2; shift 2 ;;
+    --help               ) help; exit 0 ;;
+    --iid                ) iid=$2; shift 2 ;;
+    --comment-on-start   ) comment_on_start=$2; shift 2 ;;
+    --comment-on-cancel  ) comment_on_cancel=$2; shift 2 ;;
     --comment-on-success ) comment_on_success=$2; shift 2 ;;
-    --comment-on-fail ) comment_on_fail=$2; shift 2 ;;
-    * ) break ;;
+    --comment-on-fail    ) comment_on_fail=$2; shift 2 ;;
+    *                    ) break ;;
   esac
 done
 
 require_envs
 : "${iid?}"
+: "${comment_on_start:=}"
+: "${comment_on_cancel:=}"
+: "${comment_on_success:=}"
+: "${comment_on_fail:=}"
 
 comment_if_not_empty() {
   local comment="${1?}"

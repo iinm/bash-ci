@@ -3,21 +3,21 @@
 : "${SLACK_BASE_URL:="https://slack.com"}"
 
 post_text_message() {
-  : "${SLACK_API_TOKEN:?}"
-  local user_name user_icon
+  local channel text user_name user_icon
   while test "$#" -gt 0; do
     case "$1" in
       --help ) 
         echo "Usage: ${FUNCNAME[0]} --channel CHANNEL --text TEXT [--user-name NAME] [--user-icon URL]"
         return 0
         ;;
-      --channel ) channel=$2; shift 2 ;;
-      --text ) text=$2; shift 2 ;;
+      --channel   ) channel=$2; shift 2 ;;
+      --text      ) text=$2; shift 2 ;;
       --user-name ) user_name=$2; shift 2 ;;
       --user-icon ) user_icon=$2; shift 2 ;;
-      * ) break ;;
+      *           ) break ;;
   esac
   done
+  : "${SLACK_API_TOKEN:?}"
   : "${channel?}"
   : "${text?}"
   : "${user_name:="Bot"}"
