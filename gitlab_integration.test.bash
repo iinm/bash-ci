@@ -37,7 +37,7 @@ echo "case: combine mr comment and pipeline; success"
     --build-system-name "Bash" --build-url "http://localhost" \
   echo "Hello" >&2
 # then:
-wait
+wait "$(jobs -p)"
 
 
 echo "case: combine mr comment and pipeline; fail"
@@ -69,7 +69,7 @@ if ./with_gitlab_mr_comment --iid "3" \
   exit 1
 fi
 # then:
-wait
+wait "$(jobs -p)"
 
 
 echo "case: combine mr comment and pipeline; cancel"
@@ -81,13 +81,14 @@ echo "case: combine mr comment and pipeline; cancel"
   # pipeline running
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^state=running&name=Bash&target_url=http://localhost"
-  # comment cancel
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^body=cancel"
   # pipeline canceled
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^state=canceled&name=Bash&target_url=http://localhost"
+  # comment cancel
+  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  echo "$req" | grep -qE "^body=cancel"
 ) &
+request_validator_pid=$!
 # when:
 ./with_gitlab_mr_comment --iid "3" \
   --comment-on-start "start" \
@@ -105,4 +106,4 @@ if wait "$pid"; then
   exit 1
 fi
 # then:
-wait
+wait "$request_validator_pid"

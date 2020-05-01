@@ -58,11 +58,12 @@ on_exit() {
 }
 
 on_cancel() {
+  local exit_status=0
   trap -- EXIT
-  trap -- TERM
+  kill -s HUP "$pid"
+  wait "$pid" || exit_status=$?
   comment_if_not_empty "$comment_on_cancel"
-  kill -s HUP "$(jobs -p)"
-  wait "$(jobs -p)"
+  return "$exit_status"
 }
 
 trap 'on_exit' EXIT
@@ -71,4 +72,5 @@ trap 'on_cancel' HUP INT QUIT TERM
 comment_if_not_empty "$comment_on_start"
 
 "$@" &
-wait "$(jobs -p)"
+pid=$!
+wait "$pid"

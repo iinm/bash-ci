@@ -57,6 +57,7 @@ echo "case: command canceled"
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^state=canceled&name=Bash&target_url=http://localhost"
 ) &
+request_validator_pid=$!
 # when:
 ./with_gitlab_pipeline --commit-sha 777 --build-system-name "Bash" --build-url "http://localhost" \
   sleep 5 >&2 &
@@ -68,4 +69,4 @@ if wait "$pid"; then
   exit 1
 fi
 # then:
-wait "$(jobs -p)"
+wait "$request_validator_pid"

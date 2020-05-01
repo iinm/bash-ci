@@ -77,11 +77,12 @@ on_exit() {
 }
 
 on_cancel() {
+  local exit_status=0
   trap -- EXIT
-  trap -- TERM
+  kill -s HUP "$pid"
+  wait "$pid" || exit_status=$?
   post_message_if_not_empty "$channel" "$message_on_cancel"
-  kill -s HUP "$(jobs -p)"
-  wait "$(jobs -p)"
+  return "$exit_status"
 }
 
 trap 'on_exit' EXIT
@@ -90,4 +91,5 @@ trap 'on_cancel' HUP INT QUIT TERM
 post_message_if_not_empty "$channel" "$message_on_start"
 
 "$@" &
-wait "$(jobs -p)"
+pid=$!
+wait "$pid"

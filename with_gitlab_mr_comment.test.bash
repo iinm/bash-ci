@@ -53,6 +53,7 @@ echo "case: post cancel comment on cancel"
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=cancel"
 ) &
+request_validator_pid=$!
 # when:
 ./with_gitlab_mr_comment --iid 1 --comment-on-cancel "cancel" sleep 5 >&2 &
 pid=$!
@@ -63,4 +64,4 @@ if wait "$pid"; then
   exit 1
 fi
 # then:
-wait "$(jobs -p)"
+wait "$request_validator_pid"
