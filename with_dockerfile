@@ -10,7 +10,7 @@ Usage: with_dockerfile [--verbose] [--docker-build-path DIR] [--dockerfile FILE]
                        [--remove-image-on-exit]
                        COMMAND
 
-Run command on container using Dockerfile.
+Run command on container using Dockerfile
 
   --verbose               Output log to stderr
   --docker-build-path     Docker build path (default: current directory)
@@ -73,7 +73,7 @@ container_name=$repository.$task_id
 workdir=$(pwd)
 host_workdir_mount_path=/host$workdir
 work_volume=$repository.work.$task_id
-log_file=/tmp/$0.$repository.$task_id
+log_file=${TMPDIR:-/tmp}/${BASH_SOURCE[0]}.$repository.$task_id
 
 if test "$verbose" = "yes"; then
   touch "$log_file"

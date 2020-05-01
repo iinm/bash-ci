@@ -1,41 +1,86 @@
 #!/usr/bin/env bash
 
-set -eu
+set -eu -o pipefail
 
-this_dir="$(cd "$(dirname "$0")" && pwd)"
+help() {
+  cat << 'HELP'
+Usage: with_slack_message --channel CHANNEL
+         [--message-on-start MESSAGE] [--message-on-cancel MESSAGE]
+         [--message-on-success MESSAGE] [--message-on-fail MESSAGE]
+         [--user-name NAME] [--user-icon URL]
+         COMMAND
+
+Run command and post slack message
+
+  --channel             Slack channel
+  --message-on-start    Message on command start
+  --message-on-cancel   Message on command cancel
+  --message-on-success  Message on command success
+  --message-on-fail     Message on command fail
+  --user-name           Slack user name
+  --user-icon           Slack user icon
+HELP
+}
+
+this_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=slack.bash
 source "$this_dir/slack.bash"
 
-: "${SLACK_API_TOKEN?}"
-: "${SLACK_CHANNEL?}"
-: "${SLACK_MESSAGE_ON_START:=""}"
-: "${SLACK_MESSAGE_ON_CANCEL:=""}"
-: "${SLACK_MESSAGE_ON_SUCCESS:=""}"
-: "${SLACK_MESSAGE_ON_FAIL:=""}"
-: "${SLACK_USER_NAME:="Bot"}"
-: "${SLACK_USER_ICON:="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/GNOME_Builder_Icon_%28hicolor%29.svg/240px-GNOME_Builder_Icon_%28hicolor%29.svg.png"}"
+channel=
+message_on_start=
+message_on_cancel=
+message_on_success=
+message_on_fail=
+user_name="Bot"
+user_icon="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/GNOME_Builder_Icon_%28hicolor%29.svg/240px-GNOME_Builder_Icon_%28hicolor%29.svg.png"
 
+while true; do
+  if test "$#" -eq 0; then
+    help >&2
+    exit 1
+  fi
+  case "$1" in
+    --help ) help; exit 0 ;;
+    --channel ) channel=$2; shift 2 ;;
+    --message-on-start ) message_on_start=$2; shift 2 ;;
+    --message-on-cancel ) message_on_cancel=$2; shift 2 ;;
+    --message-on-success ) message_on_success=$2; shift 2 ;;
+    --message-on-fail ) message_on_fail=$2; shift 2 ;;
+    --user-name ) user_name=$2; shift 2 ;;
+    --user-icon ) user_icon=$2; shift 2 ;;
+    * ) break ;;
+  esac
+done
+
+# Verify environment and arguments
+: "${SLACK_API_TOKEN?}"
+
+if test -z "$channel"; then
+  help >&2
+  exit 1
+fi
 
 post_message_if_not_empty() {
   local channel="${1?}"
   local message="${2?}"
   if test -n "$message"; then
-    post_text_message "$channel" "$message"
+    post_text_message --channel "$channel" --message "$message" \
+      --user-name "$user_name" --user-icon "$user_icon"
   fi
 }
 
 on_exit() {
   local exit_status="$?"
   if test "$exit_status" -eq 0; then
-    post_message_if_not_empty "$SLACK_CHANNEL" "$SLACK_MESSAGE_ON_SUCCESS"
+    post_message_if_not_empty "$channel" "$message_on_success"
   else
-    post_message_if_not_empty "$SLACK_CHANNEL" "$SLACK_MESSAGE_ON_FAIL"
+    post_message_if_not_empty "$channel" "$message_on_fail"
   fi
   return "$exit_status"
 }
 
 on_cancel() {
-  post_message_if_not_empty "$SLACK_CHANNEL" "$SLACK_MESSAGE_ON_CANCEL"
+  post_message_if_not_empty "$channel" "$message_on_cancel"
   trap -- EXIT
   trap -- TERM
   kill -s TERM $$
@@ -44,7 +89,7 @@ on_cancel() {
 trap 'on_exit' EXIT
 trap 'on_cancel' HUP INT QUIT TERM
 
-post_message_if_not_empty "$SLACK_CHANNEL" "$SLACK_MESSAGE_ON_START"
+post_message_if_not_empty "$channel" "$message_on_start"
 
 "$@" &
 wait "$(jobs -p)"

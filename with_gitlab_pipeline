@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-set -eu
+set -eu -o pipefail
 
-this_dir="$(cd "$(dirname "$0")" && pwd)"
+this_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=gitlab.bash
 source "$this_dir/gitlab.bash"
 
