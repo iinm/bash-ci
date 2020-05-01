@@ -4,7 +4,7 @@ set -eu -o pipefail
 
 help() {
   cat << 'HELP'
-Usage: with_dockerfile [--verbose] [--docker-build-path DIR] [--dockerfile FILE]
+Usage: with_dockerfile [--verbose] [--build-path DIR] [--dockerfile FILE]
                        [--image-name NAME] [--run-opts OPTIONS] [--task-id ID]
                        [--artifact PATH]... [--artifacts-save-path PATH]
                        [--remove-image-on-exit]
@@ -13,7 +13,7 @@ Usage: with_dockerfile [--verbose] [--docker-build-path DIR] [--dockerfile FILE]
 Run command on container using Dockerfile
 
   --verbose               Output log to stderr
-  --docker-build-path     Docker build path (default: current directory)
+  --build-path            Docker build path (default: current directory)
   --dockerfile            Dockerfile path (default: <docker build path>/Dockerfile)
   --image-name            Docker image name (default: <current directory name>:latest)
   --run-opts              Docker run options (e.g., "--volume data:/data --publish 80:80")
@@ -37,7 +37,7 @@ while true; do
   case "$1" in
     --help                 ) help; exit 0 ;;
     --verbose              ) verbose="yes"; shift ;;
-    --build-path           ) build_path=$2 shift 2 ;;
+    --build-path           ) build_path=$2; shift 2 ;;
     --dockerfile           ) dockerfile=$2; shift 2 ;;
     --image-name           ) image_name=$2; shift 2 ;;
     --run-opts             ) IFS=" " read -r -a run_opts <<< "$2"; shift 2 ;;
@@ -115,7 +115,7 @@ on_exit() {
 trap 'on_exit' EXIT
 
 log "build docker image, $image_name"
-if ! with_logfile docker build --file "$dockerfile" --tag "$image_name" "${build_path}" < /dev/null; then
+if ! with_logfile docker build --file "$dockerfile" --tag "$image_name" "$build_path" < /dev/null; then
   log "error: failed to build image"
   show_log_if_not_verbose
   exit 1
