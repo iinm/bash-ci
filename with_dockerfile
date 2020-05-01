@@ -14,12 +14,15 @@ Run command on container using Dockerfile.
 
   --verbose               Output log to stderr
   --docker-build-path     Docker build path (default: current directory)
-  --dockerfile            Dockerfile path (default: <Docker build path>/Dockerfile)
+  --dockerfile            Dockerfile path (default: <docker build path>/Dockerfile)
   --image-name            Docker image name (default: <current directory name>:latest)
-  --run-opts              Docker run options
-  --task-id               Unique ID to name container and work volume (default: generated random string)
-  --artifact              Artifact that will be copied from docker volume to host directory on exit
+  --run-opts              Docker run options (e.g., "--volume data:/data --publish 80:80")
+  --task-id               Unique ID to name container and work volume
+                          (default: generated random string)
+  --artifact              Artifact that will be copied from docker volume to
+                          host directory on exit
   --artifacts-save-path   Host directory that artifacts will be copied
+                          (default: <current directory>/artifacts)
   --remove-image-on-exit  Remove docker image on exit
 HELP
 }
@@ -122,7 +125,7 @@ on_exit() {
 trap 'on_exit' EXIT
 
 log "build docker image, $image_name"
-if ! with_logfile docker build -f "$dockerfile" -t "$image_name" "${build_path}" < /dev/null; then
+if ! with_logfile docker build --file "$dockerfile" --tag "$image_name" "${build_path}" < /dev/null; then
   log "error: failed to build image"
   show_log_if_not_verbose
   exit 1
@@ -136,8 +139,8 @@ fi
 log "copy $workdir to docker volume, $work_volume"
 copy_workdir_to_volume_cmd="tar -C $host_workdir_mount_path -cf - \$(cd $host_workdir_mount_path && find . ! -path . -maxdepth 1) | tar -C $workdir -xf -"
 if ! with_logfile docker run --rm --name "$container_name" \
-  -v "$workdir:$host_workdir_mount_path:ro" \
-  -v "$work_volume:$workdir" \
+  --volume "$workdir:$host_workdir_mount_path:ro" \
+  --volume "$work_volume:$workdir" \
   "$image_name" \
   sh -c "$copy_workdir_to_volume_cmd"; then
   log "error: failed to setup work volume"
@@ -147,8 +150,8 @@ fi
 
 log "run \"$*\" on container, $container_name"
 # shellcheck disable=SC2068
-docker run --rm -i --name "$container_name" -w "$workdir" \
-  -v "$work_volume:$workdir" \
+docker run --rm --interactive --name "$container_name" --workdir "$workdir" \
+  --volume "$work_volume:$workdir" \
   ${run_opts[@]} \
   "$image_name" \
   "$@"

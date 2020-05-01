@@ -27,7 +27,7 @@ EOS
       --arg text "$text" \
       "$body_template"
   )
-  curl -Sfs -X POST 'https://slack.com/api/chat.postMessage' \
+  curl --silent --show-error --fail -X POST 'https://slack.com/api/chat.postMessage' \
     -H "Authorization: Bearer $SLACK_API_TOKEN" \
     -H "Content-type: application/json; charset=utf-8" \
     -d "$body"
@@ -35,7 +35,7 @@ EOS
 
 post_message() {
   : "${SLACK_API_TOKEN:?}"
-  curl -Sfs -X POST 'https://slack.com/api/chat.postMessage' \
+  curl --silent --show-error --fail -X POST 'https://slack.com/api/chat.postMessage' \
     -H "Authorization: Bearer $SLACK_API_TOKEN" \
     -H "Content-type: application/json; charset=utf-8" \
     -d @-
@@ -44,7 +44,7 @@ post_message() {
 email2userid() {
   : "${SLACK_API_TOKEN:?}"
   local email="${1?}"
-  curl -Sfs -X GET \
+  curl --silent --show-error --fail -X GET \
     'https://slack.com/api/users.list' \
     -H "Authorization: Bearer $SLACK_API_TOKEN" \
     | jq -r ".members | map(select(.profile.email == \"$email\")) | .[0].id"

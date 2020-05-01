@@ -14,7 +14,7 @@ require_envs() {
 list_merge_requests() {
   require_envs
   local params=${1:-"state=opened&per_page=10000"}
-  curl -Sfs -X GET "$GITLAB_BASE_URL/api/v4/projects/$GITLAB_PROJECT_ID/merge_requests?$params" -H "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN"
+  curl --silent --show-error --fail -X GET "$GITLAB_BASE_URL/api/v4/projects/$GITLAB_PROJECT_ID/merge_requests?$params" -H "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN"
 }
 
 # https://docs.gitlab.com/ee/api/notes.html#create-new-merge-request-note
@@ -23,7 +23,7 @@ comment_on_merge_request() {
   local merge_request_iid="${1?}"
   local comment="${2?}"
   log "Comment on MR; merge_request_iid: $merge_request_iid, comment: $comment"
-  curl -Sfs -X POST \
+  curl --silent --show-error --fail -X POST \
     -H "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
     -d "body=$comment" \
     "$GITLAB_BASE_URL/api/v4/projects/$GITLAB_PROJECT_ID/merge_requests/${merge_request_iid}/notes"
@@ -43,7 +43,7 @@ post_build_status() {
   fi
 
   log "Post build status; sha=$sha, state=$state, name=$name, target_url=$target_url"
-  curl -Sfs -X POST \
+  curl --silent --show-error --fail -X POST \
     -H "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
     "$GITLAB_BASE_URL/api/v4/projects/$GITLAB_PROJECT_ID/statuses/${sha}" \
     -d "state=$state" \
