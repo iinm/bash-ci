@@ -11,13 +11,14 @@ post_text_message() {
     fi
     case "$1" in
       --help ) 
-        echo "${FUNCNAME[0]} --channel CHANNEL --text TEXT [--user-name NAME] [--user-icon URL]"
+        echo "Usage: ${FUNCNAME[0]} --channel CHANNEL --text TEXT [--user-name NAME] [--user-icon URL]"
         return 0
         ;;
       --channel ) channel=$2; shift 2 ;;
       --text ) text=$2; shift 2 ;;
       --user-name ) user_name=$2; shift 2 ;;
       --user-icon ) user_icon=$2; shift 2 ;;
+      * ) break ;;
   esac
   done
   : "${channel?}"

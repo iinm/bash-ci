@@ -1,2 +1,2 @@
 FROM alpine:latest
-RUN apk --no-cache add make shellcheck
+RUN apk --no-cache add bash curl jq git make shellcheck busybox gawk
