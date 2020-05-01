@@ -10,8 +10,6 @@ export GITLAB_BASE_URL=http://localhost:$api_port
 export GITLAB_PRIVATE_TOKEN=test-token
 export GITLAB_PROJECT_ID=001
 
-trap 'kill 0' EXIT
-
 
 echo "case: show help message"
 ./with_gitlab_mr_comment --help | grep -qE "^Usage"
