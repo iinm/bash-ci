@@ -23,7 +23,7 @@ echo "case: post_text_message"
   test "$(echo "$body" | jq -r .channel)" = "random"
   test "$(echo "$body" | jq -r .text)" = "Hello World!"
 ) &
-./slack.bash post_text_message --channel "random" --text "Hello World!" > /dev/null
+./slack.bash post_text_message --channel "random" --text "Hello World!" >&2
 wait "$(jobs -p)"
 
 
@@ -35,15 +35,15 @@ echo "case: post_text_message with custom user name and user icon"
   test "$(echo "$body" | jq -r .icon_url)" = "http://localhost/icon.png"
 ) &
 ./slack.bash post_text_message --channel "random" --text "Hello World!" \
-  --user-name "Bash" --user-icon "http://localhost/icon.png" > /dev/null
+  --user-name "Bash" --user-icon "http://localhost/icon.png" >&2
 wait "$(jobs -p)"
 
 
 echo "case: post_text_message fails when API returns 4xx"
 (
-  echo -e "HTTP/1.1 400 Bad Request\n\nBad Request" | busybox nc -l -p "$api_port" > /dev/null
+  echo -e "HTTP/1.1 400 Bad Request\n\nBad Request" | busybox nc -l -p "$api_port" >&2
 ) &
-if ./slack.bash post_text_message --channel "random" --text "Hello World!" > /dev/null; then
+if ./slack.bash post_text_message --channel "random" --text "Hello World!" >&2; then
   echo "error: command should fail" >&2
 fi
 wait "$(jobs -p)"
@@ -56,7 +56,7 @@ echo "case: post_message"
   echo "$req" | grep -qE "^Authorization: Bearer ${SLACK_API_TOKEN}"
   echo "$req" | grep -qE '"text": "Hello World!"'
 ) &
-./slack.bash post_message > /dev/null << 'MESSAGE'
+./slack.bash post_message >&2 << 'MESSAGE'
 {
   "as_user": false,
   "username": "Bash",

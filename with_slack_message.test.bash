@@ -26,7 +26,7 @@ echo "case: post start on start and success message on success"
 ) &
 ./with_slack_message --channel "random" \
   --message-on-start "start" --message-on-success "success" \
-  true > /dev/null
+  true >&2
 wait "$(jobs -p)"
 
 
@@ -37,7 +37,7 @@ echo "case: post fail message on fail"
   test "$(echo "$body" | jq -r .text)" = "fail"
 ) &
 if ./with_slack_message --channel "random" --message-on-success "success" --message-on-fail "fail" \
-  false > /dev/null; then
+  false >&2; then
   echo "error: command should fail" >&2
   exit 1
 fi
@@ -50,7 +50,7 @@ echo "case: post cancel message on cancel"
   body=$(echo "$req" | gawk '/^{/,/^}/')
   test "$(echo "$body" | jq -r .text)" = "cancel"
 ) &
-./with_slack_message --channel "random" --message-on-cancel "cancel" sleep 5 > /dev/null &
+./with_slack_message --channel "random" --message-on-cancel "cancel" sleep 5 >&2 &
 pid=$!
 sleep 1
 kill -s HUP "$pid"
