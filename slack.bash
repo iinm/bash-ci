@@ -49,7 +49,7 @@ email2userid() {
 }
 
 
-if test "$#" -ge 1; then
+if test "${BASH_SOURCE[0]}" = "$0"; then
   set -eu -o pipefail
   "$@"
 fi
