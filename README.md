@@ -60,65 +60,58 @@ List merge requests.
 
 Run command when merge request is created / updated.
 ```sh
-cat << 'EOF' > ./hooks.json
-[
-  {
-    "id": "test",
-    "filter": ".labels | map(. == \"skip-ci\") | any | not",
-    "cmd": "echo \"id: $MERGE_REQUEST_IID source: $SOURCE_BRANCH -> target: $TARGET_BRANCH ($MERGE_REQUEST_URL)\""
-  },
-  {
-    "id": "jenkins-test",
-    "filter": ".labels | map(. == \"jenkins-test\") | any",
-    "cmd": "curl -X POST -u $JENKINS_AUTH 'http://localhost/job/test/build' -F json=\"$(./gitlab.bash merge_request_json_for_jenkins)\""
-  },
-  {
-    "id": "ts-test",
-    "filter": ".labels | map(. == \"jenkins-test\") | any",
-    "cmd": "tsp make lint"
-  }
-]
-EOF
-
 ./gitlab.bash list_merge_requests \
-  | env GITLAB_MR_HOOK_LOGDIR=./hook_log ./gitlab.bash hook_merge_requests ./hooks.json
+  ./gitlab.bash hook_merge_requests --verbose \
+    --logdir ./tmp \
+    --hook-id hook_merge_requests_test \
+    --filter '.labels | map(. == "skip-ci") | any | not'
+    --cmd 'echo "[$MERGE_REQUEST_IID] $SOURCE_BRANCH -> $TARGET_BRANCH ($MERGE_REQUEST_URL)"' 
 ```
 
-- `id` : Hook id must be unique.
-- `filter` : [jq](https://stedolan.github.io/jq/manual/) filter to select merge request to hook.
-- `cmd` : Command you want to execute when merge request is created / updated.
+- `--logdir`  : stdout / stderr of cmd will be output this directory.
+- `--hook-id` : Hook id must be unique. (Used as a part of log file name)
+- `--filter`  : [jq](https://stedolan.github.io/jq/manual/) filter to select merge request to hook.
+- `--cmd`     : Command you want to execute when merge request is created / updated.
   - Environment variables `$MERGE_REQUEST_IID`, `$SOURCE_BRANCH`, `$TARGET_BRANCH`, and `$MERGE_REQUEST_URL` are automatically set.
 
+Trigger Jenkins job.
+```sh
+./gitlab.bash list_merge_requests \
+  ./gitlab.bash hook_merge_requests --verbose \
+    --logdir ./tmp \
+    --hook-id hook_merge_requests_test \
+    --filter '.labels | map(. == "skip-ci") | any | not'
+    --cmd 'curl -X POST -u $JENKINS_AUTH "http://localhost/job/test/build" -F json="$(./gitlab.bash merge_request_json_for_jenkins)"' 
+
+```
 
 Run command as GitLab Pipeline job.
 ```sh
-env GITLAB_COMMIT_SHA="$(git log -n 1 --pretty=format:'%H')" \
-    GITLAB_BUILD_SYSTEM_NAME="Jenkins" \
-    GITLAB_BUILD_URL="http://localhost/jenkins/job/test/1" \
-    ./with_gitlab_pipeline make lint
+./with_gitlab_pipeline --commit-sha "$(git log -n 1 --pretty=format:'%H')" \
+  --build-system-name "Jenkins" --build-url "http://localhost/jenkins/job/test/1" \
+  make lint test
 ```
 
 Run command and comment result on merge request.
 ```sh
-env GITLAB_MR_IID="3" \
-    GITLAB_MR_COMMENT_ON_START=":rocket: Build started." \
-    GITLAB_MR_COMMENT_ON_SUCCESS=":smile_cat: Build success." \
-    GITLAB_MR_COMMENT_ON_FAIL=":crying_cat_face: Build failed." \
-    GITLAB_MR_COMMENT_ON_CANCEL=":crying_cat_face: Build canceled." \
-    ./with_gitlab_mr_comment make lint
+./with_gitlab_mr_comment --iid "3" \
+  --comment-on-start ":rocket: Build started." \
+  --comment-on-cancel ":crying_cat_face: Build canceled." \
+  --comment-on-success ":smile_cat: Build success." \
+  --comment-on-fail ":crying_cat_face: Build failed." \
+  make lint test
 ```
 
 Combine Pipeline & Comment
 ```sh
-env GITLAB_COMMIT_SHA="$(git log -n 1 --pretty=format:'%H')" \
-    GITLAB_BUILD_SYSTEM_NAME="Jenkins" \
-    GITLAB_BUILD_URL="http://localhost/jenkins/job/test/1" \
-    GITLAB_MR_IID="3" \
-    GITLAB_MR_COMMENT_ON_START=":rocket: Build started." \
-    GITLAB_MR_COMMENT_ON_SUCCESS=":smile_cat: Build success." \
-    GITLAB_MR_COMMENT_ON_FAIL=":crying_cat_face: Build failed." \
-    GITLAB_MR_COMMENT_ON_CANCEL=":crying_cat_face: Build canceled." \
-    ./with_gitlab_pipeline ./with_gitlab_mr_comment make lint
+./with_gitlab_mr_comment --iid "3" \
+  --comment-on-start ":rocket: Build started." \
+  --comment-on-cancel ":crying_cat_face: Build canceled." \
+  --comment-on-success ":smile_cat: Build success." \
+  --comment-on-fail ":crying_cat_face: Build failed." \
+  ./with_gitlab_pipeline --commit-sha "$(git log -n 1 --pretty=format:'%H')" \
+    --build-system-name "Jenkins" --build-url "http://localhost/jenkins/job/test/1" \
+    make lint test
 ```
 
 
@@ -131,10 +124,10 @@ export SLACK_API_TOKEN="your token"
 
 Run command and send Slack message.
 ```sh
-env SLACK_CHANNEL="general" \
-    SLACK_MESSAGE_ON_SUCCESS=":smile_cat: Success" \
-    SLACK_MESSAGE_ON_FAIL=":crying_cat_face: Fail" \
-    ./with_slack_message make lint
+./with_slack_message --channel "random" \
+  --message-on-success ":smile_cat: Success" \
+  --message-on-fail ":crying_cat_face: Fail" \
+  make lint
 ```
 
 Get Slack user id from commit log.
@@ -144,7 +137,7 @@ Get Slack user id from commit log.
 
 Post text message.
 ```sh
-./slack.bash post_text_message "#random" "Hello!"
+./slack.bash post_text_message --channel "#random" --text "Hello!"
 ```
 
 Post message.
@@ -179,4 +172,22 @@ Post message.
   ]
 }
 EOF
+```
+
+
+## Test Bash-CI
+
+Requirements
+- shellcheck
+- busybox
+- gawk
+
+```sh
+make lint test
+```
+
+or use Docker
+```sh
+bash ./with_dockerfile.test.bash 2> test.log
+./with_dockerfile --verbose --run-opts "--tty" make lint test
 ```
