@@ -9,6 +9,8 @@ slack_api_port=8080
 export SLACK_BASE_URL=http://localhost:$slack_api_port
 export SLACK_API_TOKEN=test-token
 
+trap 'kill 0' EXIT
+
 
 echo "case: show help message"
 ./with_slack_message --help | grep -qE "^Usage"
