@@ -1,37 +1,66 @@
 #!/usr/bin/env bash
 
-set -eu
+set -eu -o pipefail
 
-this_dir="$(cd "$(dirname "$0")" && pwd)"
+help() {
+  cat << 'HELP'
+Usage: with_gitlab_pipeline --commit-sha COMMIT_SHA
+                            --build-system-name NAME --build-url URL
+                            COMMAND
+
+Run command as GitLab pipeline
+HELP
+}
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=gitlab.bash
-source "$this_dir/gitlab.bash"
+source "$script_dir/gitlab.bash"
+
+while true; do
+  if test "$#" -eq 0; then
+    help >&2
+    exit 1
+  fi
+  case "$1" in
+    --help              ) help; exit 0 ;;
+    --commit-sha        ) commit_sha=$2; shift 2 ;;
+    --build-system-name ) build_system_name=$2; shift 2 ;;
+    --build-url         ) build_url=$2; shift 2 ;;
+    *                   ) break ;;
+  esac
+done
 
 require_envs
-: "${GITLAB_COMMIT_SHA?}"
-: "${GITLAB_BUILD_SYSTEM_NAME?}"
-: "${GITLAB_BUILD_URL?}"
+: "${commit_sha?}"
+: "${build_system_name?}"
+: "${build_url?}"
 
 on_exit() {
-  exit_status="$?"
+  local exit_status="$?"
   if test "$exit_status" -eq 0; then
-    post_build_status "$GITLAB_COMMIT_SHA" 'success' "$GITLAB_BUILD_SYSTEM_NAME" "$GITLAB_BUILD_URL"
+    post_build_status --verbose --sha "$commit_sha" --state 'success' \
+      --name "$build_system_name" --target-url "$build_url"
   else
-    post_build_status "$GITLAB_COMMIT_SHA" 'failed' "$GITLAB_BUILD_SYSTEM_NAME" "$GITLAB_BUILD_URL"
+    post_build_status --verbose --sha "$commit_sha" --state 'failed' \
+      --name "$build_system_name" --target-url "$build_url"
   fi
   return "$exit_status"
 }
 
 on_cancel() {
-  post_build_status "$GITLAB_COMMIT_SHA" 'canceled' "$GITLAB_BUILD_SYSTEM_NAME" "$GITLAB_BUILD_URL"
   trap -- EXIT
   trap -- TERM
-  kill -s TERM $$
+  post_build_status --verbose --sha "$commit_sha" --state 'canceled' \
+    --name "$build_system_name" --target-url "$build_url"
+  kill -s HUP "$(jobs -p)"
+  wait "$(jobs -p)"
 }
 
 trap 'on_exit' EXIT
 trap 'on_cancel' HUP INT QUIT TERM
 
-post_build_status "$GITLAB_COMMIT_SHA" 'running' "$GITLAB_BUILD_SYSTEM_NAME" "$GITLAB_BUILD_URL"
+post_build_status --verbose --sha "$commit_sha" --state 'running' \
+  --name "$build_system_name"  --target-url "$build_url"
 
 "$@" &
 wait "$(jobs -p)"

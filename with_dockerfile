@@ -1,76 +1,69 @@
 #!/usr/bin/env bash
 
-set -eu #-o pipefail
+set -eu -o pipefail
 
 help() {
   cat << 'HELP'
-Usage: with_dockerfile [--verbose] [--docker-build-path DIR] [--dockerfile FILE]
+Usage: with_dockerfile [--verbose] [--build-path DIR] [--dockerfile FILE]
                        [--image-name NAME] [--run-opts OPTIONS] [--task-id ID]
                        [--artifact PATH]... [--artifacts-save-path PATH]
                        [--remove-image-on-exit]
                        COMMAND
 
-Run command on container using Dockerfile.
+Run command on container using Dockerfile
 
   --verbose               Output log to stderr
-  --docker-build-path     Docker build path (default: current directory)
-  --dockerfile            Dockerfile path (default: <Docker build path>/Dockerfile)
+  --build-path            Docker build path (default: current directory)
+  --dockerfile            Dockerfile path (default: <docker build path>/Dockerfile)
   --image-name            Docker image name (default: <current directory name>:latest)
-  --run-opts              Docker run options
-  --task-id               Unique ID to name container and work volume (default: generated random string)
-  --artifact              Artifact that will be copied from docker volume to host directory on exit
+  --run-opts              Docker run options (e.g., "--volume data:/data --publish 80:80")
+  --task-id               Unique ID to name container and work volume
+                          (default: generated random string)
+  --artifact              Artifact that will be copied from docker volume to
+                          host directory on exit
   --artifacts-save-path   Host directory that artifacts will be copied
+                          (default: <current directory>/artifacts)
   --remove-image-on-exit  Remove docker image on exit
 HELP
 }
 
-verbose="no"
-build_path=$(pwd)
-dockerfile=$build_path/Dockerfile
-image_name=$(basename "$build_path"):latest
-run_opts=
-task_id=$(env LC_CTYPE=C tr -dc '[:alnum:]' < /dev/urandom | head -c 10 || true)
 artifacts=()
-artifacts_save_path=$(pwd)/artifacts/$task_id
-remove_image_on_exit="no"
 
 while true; do
   if test "$#" -eq 0; then
     help >&2
     exit 1
   fi
-
   case "$1" in
-    --help )
-      help; exit 0 ;;
-    --verbose )
-      verbose="yes"; shift ;;
-    --build-path )
-      build_path=$2; dockerfile=$build_path/Dockerfile; shift 2 ;;
-    --dockerfile )
-      dockerfile=$2; shift 2 ;;
-    --image-name )
-      image_name=$2; shift 2 ;;
-    --run-opts )
-      IFS=" " read -r -a run_opts <<< "$2"; shift 2 ;;
-    --task-id )
-      task_id=$2; shift 2 ;;
-    --artifact )
-      artifacts=("${artifacts[@]}" "$2"); shift 2 ;;
-    --artifacts-save-path )
-      artifacts_save_path=$2; shift 2 ;;
-    --remove-image-on-exit )
-      remove_image_on_exit="yes"; shift ;;
+    --help                 ) help; exit 0 ;;
+    --verbose              ) verbose="yes"; shift ;;
+    --build-path           ) build_path=$2; shift 2 ;;
+    --dockerfile           ) dockerfile=$2; shift 2 ;;
+    --image-name           ) image_name=$2; shift 2 ;;
+    --run-opts             ) IFS=" " read -r -a run_opts <<< "$2"; shift 2 ;;
+    --task-id              ) task_id=$2; shift 2 ;;
+    --artifact             ) artifacts=("${artifacts[@]}" "$2"); shift 2 ;;
+    --artifacts-save-path  ) artifacts_save_path=$2; shift 2 ;;
+    --remove-image-on-exit ) remove_image_on_exit="yes"; shift ;;
     * ) break ;;
   esac
 done
+
+: "${verbose:="no"}"
+: "${build_path:="$(pwd)"}"
+: "${dockerfile:="$build_path/Dockerfile"}"
+: "${image_name:="$(basename "$build_path"):latest"}"
+: "${run_opts:=}"
+: "${task_id:="$(env LC_CTYPE=C tr -dc '[:alnum:]' < /dev/urandom | head -c 10 || true)"}"
+: "${artifacts_save_path:="$(pwd)/artifacts/$task_id"}"
+: "${remove_image_on_exit:="no"}"
 
 repository=$(echo "$image_name" | cut -d ':' -f 1)
 container_name=$repository.$task_id
 workdir=$(pwd)
 host_workdir_mount_path=/host$workdir
 work_volume=$repository.work.$task_id
-log_file=/tmp/$0.$repository.$task_id
+log_file=${TMPDIR:-/tmp}/${BASH_SOURCE[0]}.$repository.$task_id
 
 if test "$verbose" = "yes"; then
   touch "$log_file"
@@ -93,7 +86,7 @@ show_log_if_not_verbose() {
 }
 
 on_exit() {
-  exit_status="$?"
+  local exit_status="$?"
   # copy artifacts to host directory
   if test "${#artifacts[@]}" -gt 0; then
     log "copy artifacts from docker volume to host directory; ${artifacts[*]} -> $artifacts_save_path"
@@ -122,7 +115,7 @@ on_exit() {
 trap 'on_exit' EXIT
 
 log "build docker image, $image_name"
-if ! with_logfile docker build -f "$dockerfile" -t "$image_name" "${build_path}" < /dev/null; then
+if ! with_logfile docker build --file "$dockerfile" --tag "$image_name" "$build_path" < /dev/null; then
   log "error: failed to build image"
   show_log_if_not_verbose
   exit 1
@@ -136,8 +129,8 @@ fi
 log "copy $workdir to docker volume, $work_volume"
 copy_workdir_to_volume_cmd="tar -C $host_workdir_mount_path -cf - \$(cd $host_workdir_mount_path && find . ! -path . -maxdepth 1) | tar -C $workdir -xf -"
 if ! with_logfile docker run --rm --name "$container_name" \
-  -v "$workdir:$host_workdir_mount_path:ro" \
-  -v "$work_volume:$workdir" \
+  --volume "$workdir:$host_workdir_mount_path:ro" \
+  --volume "$work_volume:$workdir" \
   "$image_name" \
   sh -c "$copy_workdir_to_volume_cmd"; then
   log "error: failed to setup work volume"
@@ -145,10 +138,10 @@ if ! with_logfile docker run --rm --name "$container_name" \
   exit 1
 fi
 
-log "run \"$*\" on container, $container_name"
+log "run [" "$@" "] on container, $container_name"
 # shellcheck disable=SC2068
-docker run --rm -i --name "$container_name" -w "$workdir" \
-  -v "$work_volume:$workdir" \
+docker run --rm --interactive --name "$container_name" --workdir "$workdir" \
+  --volume "$work_volume:$workdir" \
   ${run_opts[@]} \
   "$image_name" \
   "$@"

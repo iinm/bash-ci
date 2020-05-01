@@ -1,39 +1,74 @@
 #!/usr/bin/env bash
 
-set -eu
+set -eu -o pipefail
 
-this_dir="$(cd "$(dirname "$0")" && pwd)"
+help() {
+  cat << 'HELP'
+Usage: with_gitlab_mr_comment --iid MERGE_REQUEST_IID
+                              [--comment-on-start COMMENT] [--comment-on-cancel COMMENT]
+                              [--comment-on-success COMMENT] [--comment-on-fail COMMENT]
+                              COMMAND
+
+Run command and post comment on merge request
+HELP
+}
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=gitlab.bash
-source "$this_dir/gitlab.bash"
+source "$script_dir/gitlab.bash"
+
+while true; do
+  if test "$#" -eq 0; then
+    help >&2
+    exit 1
+  fi
+  case "$1" in
+    --help               ) help; exit 0 ;;
+    --iid                ) iid=$2; shift 2 ;;
+    --comment-on-start   ) comment_on_start=$2; shift 2 ;;
+    --comment-on-cancel  ) comment_on_cancel=$2; shift 2 ;;
+    --comment-on-success ) comment_on_success=$2; shift 2 ;;
+    --comment-on-fail    ) comment_on_fail=$2; shift 2 ;;
+    *                    ) break ;;
+  esac
+done
 
 require_envs
-: "${GITLAB_MR_IID?}"
-: "${GITLAB_MR_COMMENT_ON_START?}"
-: "${GITLAB_MR_COMMENT_ON_CANCEL?}"
-: "${GITLAB_MR_COMMENT_ON_SUCCESS?}"
-: "${GITLAB_MR_COMMENT_ON_FAIL?}"
+: "${iid?}"
+: "${comment_on_start:=}"
+: "${comment_on_cancel:=}"
+: "${comment_on_success:=}"
+: "${comment_on_fail:=}"
+
+comment_if_not_empty() {
+  local comment="${1?}"
+  if test -n "$comment"; then
+    comment_on_merge_request --verbose --iid "$iid" --comment "$comment"
+  fi
+}
 
 on_exit() {
-  exit_status="$?"
+  local exit_status="$?"
   if test "$exit_status" -eq 0; then
-    comment_on_merge_request "$GITLAB_MR_IID" "$GITLAB_MR_COMMENT_ON_SUCCESS"
+    comment_if_not_empty "$comment_on_success"
   else
-    comment_on_merge_request "$GITLAB_MR_IID" "$GITLAB_MR_COMMENT_ON_FAIL"
+    comment_if_not_empty "$comment_on_fail"
   fi
   return "$exit_status"
 }
 
 on_cancel() {
-  comment_on_merge_request "$GITLAB_MR_IID" "$GITLAB_MR_COMMENT_ON_CANCEL"
   trap -- EXIT
   trap -- TERM
-  kill -s TERM $$
+  comment_if_not_empty "$comment_on_cancel"
+  kill -s HUP "$(jobs -p)"
+  wait "$(jobs -p)"
 }
 
 trap 'on_exit' EXIT
 trap 'on_cancel' HUP INT QUIT TERM
 
-comment_on_merge_request "$GITLAB_MR_IID" "$GITLAB_MR_COMMENT_ON_START"
+comment_if_not_empty "$comment_on_start"
 
 "$@" &
 wait "$(jobs -p)"
