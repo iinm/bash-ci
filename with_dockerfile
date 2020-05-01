@@ -148,7 +148,7 @@ if ! with_logfile docker run --rm --name "$container_name" \
   exit 1
 fi
 
-log "run \"$*\" on container, $container_name"
+log "run [" "$@" "] on container, $container_name"
 # shellcheck disable=SC2068
 docker run --rm --interactive --name "$container_name" --workdir "$workdir" \
   --volume "$work_volume:$workdir" \
