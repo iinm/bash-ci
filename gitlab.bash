@@ -84,7 +84,7 @@ hook_merge_requests() {
   while test "$#" -gt 0; do
     case "$1" in
       --verbose ) verbose="yes"; shift ;;
-      --task-id ) hook_id=$2; shift 2 ;;
+      --hook-id ) hook_id=$2; shift 2 ;;
       --filter  ) filter=$2; shift 2 ;;
       --logdir  ) logdir=$2; shift 2 ;;
       --cmd     ) cmd=$2; shift 2 ;;
