@@ -14,7 +14,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: test with_dockerfile
-      run: bash ./with_dockerfile.test.bash 2> test.log
+      run: bash ./with_dockerfile.test.bash 2> test.log || cat test.log
 
     - name: lint test
       run: ./with_dockerfile --verbose make lint test

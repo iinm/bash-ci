@@ -1,5 +1,7 @@
 # Bash scripts for CI
 
+https://github.com/iinm/bash-ci/workflows/verify/badge.svg
+
 ## Requirements
 
 - [Bash](https://www.gnu.org/software/bash/)
@@ -188,6 +190,6 @@ make lint test
 
 or use Docker
 ```sh
-bash ./with_dockerfile.test.bash 2> test.log
+bash ./with_dockerfile.test.bash 2> test.log || cat test.log
 ./with_dockerfile --verbose --run-opts "--tty" make lint test
 ```
