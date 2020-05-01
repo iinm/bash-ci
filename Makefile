@@ -10,4 +10,5 @@ lint:
 .PHONY: test
 test:
 	find . -name '*.test.bash' \
-		| xargs -n 1 -I {} sh -c "echo -e '\ntest: {}'; bash -x {}" 2> test.log
+		| xargs -n 1 -I {} sh -c "echo -e '\n$(shell tput setaf 4)test: {}$(shell tput sgr0)'; bash -x {} && echo '$(shell tput setaf 2)all case passed$(shell tput sgr0)' || echo '$(shell tput setaf 1)failed$(shell tput sgr0)'" \
+		2> test.log
