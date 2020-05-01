@@ -21,6 +21,7 @@ Run command on container. (Assume you have Dockerfile)
 ```sh
 mkdir -p ./tmp/with_dockerfile_exmaple
 echo "FROM busybox" > ./tmp/with_dockerfile_exmaple/Dockerfile
+
 ./with_dockerfile --verbose --build-path ./tmp/with_dockerfile_exmaple ls -lh
 ```
 
@@ -28,8 +29,10 @@ Run command on container and copy artifacts from docker volume to host directory
 ```sh
 mkdir -p ./tmp/with_dockerfile_exmaple
 echo "FROM busybox" > ./tmp/with_dockerfile_exmaple/Dockerfile
+
 ./with_dockerfile --verbose --build-path ./tmp/with_dockerfile_exmaple \
   --task-id 'ls' --artifact out.txt sh -c 'ls -lh > out.txt'
+
 cat ./artifacts/ls/out.txt
 ```
 
@@ -37,6 +40,7 @@ Use docker volume as cache.
 ```sh
 mkdir -p ./tmp/with_dockerfile_exmaple
 echo "FROM node:current-alpine" > ./tmp/with_dockerfile_exmaple/Dockerfile
+
 ./with_dockerfile --verbose --build-path ./tmp/with_dockerfile_exmaple \
   --task-id 'node-example' --run-opts '-v npm-user-cache:/root/.npm' \
   sh -c 'npm install ramda; ls -lh ./node_modules'
