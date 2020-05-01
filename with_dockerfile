@@ -150,7 +150,7 @@ fi
 
 log "run [" "$@" "] on container, $container_name"
 # shellcheck disable=SC2068
-docker run --rm --interactive --name "$container_name" --workdir "$workdir" \
+docker run --rm --interactive --tty --name "$container_name" --workdir "$workdir" \
   --volume "$work_volume:$workdir" \
   ${run_opts[@]} \
   "$image_name" \
