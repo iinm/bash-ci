@@ -48,11 +48,12 @@ on_exit() {
 }
 
 on_cancel() {
-  post_build_status --verbose --sha "$commit_sha" --state 'canceled' \
-    --name "$build_system_name" --target-url "$build_url"
   trap -- EXIT
   trap -- TERM
-  kill -s TERM $$
+  post_build_status --verbose --sha "$commit_sha" --state 'canceled' \
+    --name "$build_system_name" --target-url "$build_url"
+  kill -s HUP "$(jobs -p)"
+  wait "$(jobs -p)"
 }
 
 trap 'on_exit' EXIT

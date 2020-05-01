@@ -39,15 +39,15 @@ while true; do
     exit 1
   fi
   case "$1" in
-    --help ) help; exit 0 ;;
-    --channel ) channel=$2; shift 2 ;;
-    --message-on-start ) message_on_start=$2; shift 2 ;;
-    --message-on-cancel ) message_on_cancel=$2; shift 2 ;;
+    --help               ) help; exit 0 ;;
+    --channel            ) channel=$2; shift 2 ;;
+    --message-on-start   ) message_on_start=$2; shift 2 ;;
+    --message-on-cancel  ) message_on_cancel=$2; shift 2 ;;
     --message-on-success ) message_on_success=$2; shift 2 ;;
-    --message-on-fail ) message_on_fail=$2; shift 2 ;;
-    --user-name ) user_name=$2; shift 2 ;;
-    --user-icon ) user_icon=$2; shift 2 ;;
-    * ) break ;;
+    --message-on-fail    ) message_on_fail=$2; shift 2 ;;
+    --user-name          ) user_name=$2; shift 2 ;;
+    --user-icon          ) user_icon=$2; shift 2 ;;
+    *                    ) break ;;
   esac
 done
 
@@ -77,10 +77,11 @@ on_exit() {
 }
 
 on_cancel() {
-  post_message_if_not_empty "$channel" "$message_on_cancel"
   trap -- EXIT
   trap -- TERM
-  kill -s TERM $$
+  post_message_if_not_empty "$channel" "$message_on_cancel"
+  kill -s HUP "$(jobs -p)"
+  wait "$(jobs -p)"
 }
 
 trap 'on_exit' EXIT

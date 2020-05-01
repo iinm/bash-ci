@@ -58,10 +58,11 @@ on_exit() {
 }
 
 on_cancel() {
-  comment_if_not_empty "$comment_on_cancel"
   trap -- EXIT
   trap -- TERM
-  kill -s TERM $$
+  comment_if_not_empty "$comment_on_cancel"
+  kill -s HUP "$(jobs -p)"
+  wait "$(jobs -p)"
 }
 
 trap 'on_exit' EXIT
