@@ -21,10 +21,7 @@ list_merge_requests() {
 comment_on_merge_request() {
   require_envs
   local merge_request_iid comment
-  while true; do
-    if test "$#" -eq 0; then
-      break
-    fi
+  while test "$#" -gt 0; do
     case "$1" in
       --iid ) merge_request_iid=$2; shift 2 ;;
       --comment ) comment=$2; shift 2 ;;
@@ -45,10 +42,7 @@ comment_on_merge_request() {
 post_build_status() {
   require_envs
   local sha state name target_url
-  while true; do
-    if test "$#" -eq 0; then
-      break
-    fi
+  while test "$#" -gt 0; do
     case "$1" in
       --sha ) sha=$2; shift 2 ;;
       --state ) state=$2; shift 2 ;;

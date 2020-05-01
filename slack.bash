@@ -5,10 +5,7 @@
 post_text_message() {
   : "${SLACK_API_TOKEN:?}"
   local channel text user_name user_icon
-  while true; do
-    if test "$#" -eq 0; then
-      break
-    fi
+  while test "$#" -gt 0; do
     case "$1" in
       --help ) 
         echo "Usage: ${FUNCNAME[0]} --channel CHANNEL --text TEXT [--user-name NAME] [--user-icon URL]"
