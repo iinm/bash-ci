@@ -12,39 +12,48 @@ export GITLAB_PROJECT_ID=001
 
 
 echo "case: show help message"
+# when:
 ./with_gitlab_mr_comment --help | grep -qE "^Usage"
 
 
 echo "case: post start comment on start and success comment on success"
+# given:
 (
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=start"
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=success"
 ) &
+# when:
 ./with_gitlab_mr_comment --iid 1 \
   --comment-on-start "start" --comment-on-success "success" \
   echo "Hello" >&2
+# then:
 wait "$(jobs -p)"
 
 
 echo "case: post fail comment on fail"
+# given:
 (
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=fail"
 ) &
+# when:
 if ./with_gitlab_mr_comment --iid 1 --comment-on-fail "fail" false >&2; then
   echo "error: command should fail" >&2
   exit 1
 fi
+# then:
 wait "$(jobs -p)"
 
 
 echo "case: post cancel comment on cancel"
+# given:
 (
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=cancel"
 ) &
+# when:
 ./with_gitlab_mr_comment --iid 1 --comment-on-cancel "cancel" sleep 5 >&2 &
 pid=$!
 sleep 1
@@ -53,4 +62,5 @@ if wait "$pid"; then
   echo "error: command should fail" >&2
   exit 1
 fi
+# then:
 wait "$(jobs -p)"
