@@ -17,15 +17,15 @@ source "$this_dir/slack.bash"
 
 
 post_message_if_not_empty() {
-  channel="${1?}"
-  message="${2?}"
+  local channel="${1?}"
+  local message="${2?}"
   if test -n "$message"; then
     post_text_message "$channel" "$message"
   fi
 }
 
 on_exit() {
-  exit_status="$?"
+  local exit_status="$?"
   if test "$exit_status" -eq 0; then
     post_message_if_not_empty "$SLACK_CHANNEL" "$SLACK_MESSAGE_ON_SUCCESS"
   else

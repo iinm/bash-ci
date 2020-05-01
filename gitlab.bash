@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 log() {
-  now="$(date "+%Y-%m-%d %H:%M:%S")"
-  echo "$now" "$@"
+  echo "$(date "+%Y-%m-%d %H:%M:%S")" "$@"
 }
 
 require_envs() {
@@ -14,15 +13,15 @@ require_envs() {
 # https://docs.gitlab.com/ee/api/merge_requests.html#list-merge-requests
 list_merge_requests() {
   require_envs
-  params=${1:-"state=opened&per_page=10000"}
+  local params=${1:-"state=opened&per_page=10000"}
   curl -Sfs -X GET "$GITLAB_BASE_URL/api/v4/projects/$GITLAB_PROJECT_ID/merge_requests?$params" -H "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN"
 }
 
 # https://docs.gitlab.com/ee/api/notes.html#create-new-merge-request-note
 comment_on_merge_request() {
   require_envs
-  merge_request_iid="${1?}"
-  comment="${2?}"
+  local merge_request_iid="${1?}"
+  local comment="${2?}"
   log "Comment on MR; merge_request_iid: $merge_request_iid, comment: $comment"
   curl -Sfs -X POST \
     -H "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
@@ -33,10 +32,10 @@ comment_on_merge_request() {
 # https://docs.gitlab.com/ee/api/commits.html#post-the-build-status-to-a-commit
 post_build_status() {
   require_envs
-  sha="${1?}"
-  state="${2?}"
-  name="${3?}"
-  target_url="${4?}"
+  local sha="${1?}"
+  local state="${2?}"
+  local name="${3?}"
+  local target_url="${4?}"
 
   if ! (echo "$state" | grep -qE '^(pending|running|success|failed|canceled)$'); then
     echo "error: Invalid state" >&2
@@ -54,47 +53,56 @@ post_build_status() {
 
 # Run command when merge request is updated.
 hook_merge_requests() {
-  hooks_json_file="${1?}"
+  local hooks_json_file="${1?}"
 
   local IFS=$'\n'
-  return_code="0"
+  local exit_status="0"
   for merge_request_json in $(cat - | jq -c '.[]'); do
     if echo "$merge_request_json" | hook_merge_request "$hooks_json_file"; then
       :
     else
-      return_code="$?"
+      exit_status="$?"
     fi
   done
-  return "$return_code"
+  return "$exit_status"
 }
 
 # Run command for merge request.
 hook_merge_request() {
   : "${GITLAB_MR_HOOK_LOGDIR?}"
   local SHELL="${SHELL:-bash}"
+  local merge_request_json
   merge_request_json="$(cat -)"
-  hooks_json_file="${1?}"
+  local hooks_json_file="${1?}"
 
   mkdir -p "$GITLAB_MR_HOOK_LOGDIR"
   log "$(echo "$merge_request_json" | jq -r '"Checking MR \"\(.title)\" \(.labels) \(.source_branch) -> \(.target_branch) by \(.author.name) \(.web_url)"')"
 
-  return_code="0"
+  local exit_status="0"
   for hook_json in $(jq -c '.[]' < "$hooks_json_file"); do
+    local hook_id
     hook_id="$(echo "$hook_json" | jq -r '.id')"
+    local hook_filter
     hook_filter="$(echo "$hook_json" | jq -r '.filter')"
+    local hook_cmd
     hook_cmd="$(echo "$hook_json" | jq -r '.cmd')"
 
     if test "$(echo "$merge_request_json" | jq "$hook_filter")" = 'true'; then
       log "$(echo "$hook_json" | jq -r '"Hook \"\(.id)\" is matched.  Run \"\(.cmd)\""')"
 
+      local merge_request_iid
       merge_request_iid="$(echo "$merge_request_json" | jq -r '.iid')"
+      local commit_sha
       commit_sha="$(echo "$merge_request_json" | jq -r '.sha')"
+      local source_branch
       source_branch="$(echo "$merge_request_json" | jq -r '.source_branch')"
+      local target_branch
       target_branch="$(echo "$merge_request_json" | jq -r '.target_branch')"
+      local merge_request_url
       merge_request_url="$(echo "$merge_request_json" | jq -r '.web_url')"
 
-      commit_sha_short="${commit_sha:0:7}"
-      log_file="$GITLAB_MR_HOOK_LOGDIR/${hook_id}.${commit_sha_short}.log"
+      local commit_sha_short="${commit_sha:0:7}"
+      local log_file="$GITLAB_MR_HOOK_LOGDIR/${hook_id}.${commit_sha_short}.log"
 
       if test -f "$log_file"; then
         log "=> SKIP.  Log file aleady exists.  See $log_file"
@@ -108,13 +116,13 @@ hook_merge_request() {
              "$SHELL" <(echo "$hook_cmd") &> "$log_file"; then
         log "=> SUCCESS.  See $log_file"
       else
-        return_code="$?"
+        exit_status="$?"
         log "=> FAILED.  See $log_file"
       fi
     fi
   done
 
-  return "$return_code"
+  return "$exit_status"
 }
 
 merge_request_json_for_jenkins() {
@@ -123,6 +131,7 @@ merge_request_json_for_jenkins() {
   : "${TARGET_BRANCH?}"
   : "${MERGE_REQUEST_URL?}"
   
+  local template
   template=$(cat << 'EOS'
     {
       "parameter": [

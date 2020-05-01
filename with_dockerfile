@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu #-o pipefail
+set -eu -o pipefail
 
 help() {
   cat << 'HELP'
@@ -93,7 +93,7 @@ show_log_if_not_verbose() {
 }
 
 on_exit() {
-  exit_status="$?"
+  local exit_status="$?"
   # copy artifacts to host directory
   if test "${#artifacts[@]}" -gt 0; then
     log "copy artifacts from docker volume to host directory; ${artifacts[*]} -> $artifacts_save_path"

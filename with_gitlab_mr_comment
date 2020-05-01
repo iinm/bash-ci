@@ -14,7 +14,7 @@ require_envs
 : "${GITLAB_MR_COMMENT_ON_FAIL?}"
 
 on_exit() {
-  exit_status="$?"
+  local exit_status="$?"
   if test "$exit_status" -eq 0; then
     comment_on_merge_request "$GITLAB_MR_IID" "$GITLAB_MR_COMMENT_ON_SUCCESS"
   else

@@ -4,9 +4,10 @@ post_text_message() {
   : "${SLACK_API_TOKEN:?}"
   : "${SLACK_USER_NAME:="Bot"}"
   : "${SLACK_USER_ICON:="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/GNOME_Builder_Icon_%28hicolor%29.svg/240px-GNOME_Builder_Icon_%28hicolor%29.svg.png"}"
-  channel=${1:?}
-  text=${2:?}
+  local channel=${1:?}
+  local text=${2:?}
 
+  local body_template
   body_template=$(cat << 'EOS'
     {
       "as_user": false,
@@ -17,6 +18,7 @@ post_text_message() {
     }
 EOS
 )
+  local body
   body=$(
     jq -n \
       --arg username "$SLACK_USER_NAME" \
@@ -41,7 +43,7 @@ post_message() {
 
 email2userid() {
   : "${SLACK_API_TOKEN:?}"
-  email="${1?}"
+  local email="${1?}"
   curl -Sfs -X GET \
     'https://slack.com/api/users.list' \
     -H "Authorization: Bearer $SLACK_API_TOKEN" \

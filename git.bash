@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
 has_remote_update() {
-  remote="${1?}"  # e.g. origin
-  branch="${2?}"
+  local remote="${1:-"origin"}"
+  local branch
+  branch="${2:-"$(git rev-parse --abbrev-ref HEAD)"}"
 
+  local remote_sha
   remote_sha="$(git ls-remote "$remote" "$branch" | awk '{ print $1 }')"
   if test -z "$remote_sha"; then
     echo "error: $remote/$branch is not found" >&2
