@@ -20,13 +20,12 @@ list_merge_requests() {
 # https://docs.gitlab.com/ee/api/notes.html#create-new-merge-request-note
 comment_on_merge_request() {
   require_envs
-  local merge_request_iid comment
   local verbose="no"
   while test "$#" -gt 0; do
     case "$1" in
       --verbose ) verbose="yes"; shift ;;
-      --iid ) merge_request_iid=$2; shift 2 ;;
-      --comment ) comment=$2; shift 2 ;;
+      --iid ) local merge_request_iid=$2; shift 2 ;;
+      --comment ) local comment=$2; shift 2 ;;
       * ) break ;;
     esac
   done
@@ -45,15 +44,14 @@ comment_on_merge_request() {
 # https://docs.gitlab.com/ee/api/commits.html#post-the-build-status-to-a-commit
 post_build_status() {
   require_envs
-  local sha state name target_url
   local verbose="no"
   while test "$#" -gt 0; do
     case "$1" in
-      --verbose ) verbose="yes"; shift ;;
-      --sha ) sha=$2; shift 2 ;;
-      --state ) state=$2; shift 2 ;;
-      --name ) name=$2; shift 2 ;;
-      --target-url ) target_url=$2; shift 2 ;;
+      --verbose ) local verbose="yes"; shift ;;
+      --sha ) local sha=$2; shift 2 ;;
+      --state ) local state=$2; shift 2 ;;
+      --name ) local name=$2; shift 2 ;;
+      --target-url ) local target_url=$2; shift 2 ;;
       * ) break ;;
     esac
   done
@@ -79,15 +77,14 @@ post_build_status() {
 }
 
 hook_merge_requests() {
-  local hook_id filter logdir cmd
   local verbose="no"
   while test "$#" -gt 0; do
     case "$1" in
       --verbose ) verbose="yes"; shift ;;
-      --task-id ) hook_id=$2; shift 2 ;;
-      --filter ) filter=$2; shift 2 ;;
-      --logdir ) logdir=$2; shift 2 ;;
-      --cmd ) cmd=$2; shift 2 ;;
+      --task-id ) local hook_id=$2; shift 2 ;;
+      --filter ) local filter=$2; shift 2 ;;
+      --logdir ) local logdir=$2; shift 2 ;;
+      --cmd ) local cmd=$2; shift 2 ;;
       * ) break ;;
     esac
   done

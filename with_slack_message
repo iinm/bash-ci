@@ -26,7 +26,6 @@ Run command and post slack message
 HELP
 }
 
-channel=
 message_on_start=
 message_on_cancel=
 message_on_success=
