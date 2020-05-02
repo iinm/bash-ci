@@ -24,5 +24,4 @@ lint:
 test:
 	$(info --- $@)
 	find . -name '*.test.bash' \
-		| xargs -n 1 -I {} sh -c "echo -e '\n$(shell tput setaf 4)test: {}$(shell tput sgr0)'; (bash -x {} && echo '$(shell tput setaf 2)all case passed$(shell tput sgr0)') || (echo '$(shell tput setaf 1)failed$(shell tput sgr0)'; exit 1)" \
-		2> test.log
+		| xargs -n 1 -I {} bash -c "echo -e '\n$(shell tput setaf 4)test: {}$(shell tput sgr0)'; (bash -x {} && echo '$(shell tput setaf 2)all case passed$(shell tput sgr0)') || (echo '$(shell tput setaf 1)failed$(shell tput sgr0)'; echo '--- tail -20 test.log'; tail -20 test.log; exit 1)" 2> test.log

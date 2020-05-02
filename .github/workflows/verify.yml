@@ -17,10 +17,4 @@ jobs:
       run: bash ./with_dockerfile.test.bash 2> test.log
 
     - name: lint test
-      run: ./with_dockerfile --verbose --task-id test --artifact test.log make lint test
-
-    - name: save test log
-      uses: actions/upload-artifact@v1
-      with:
-        name: test.log
-        path: artifacts/test/test.log
+      run: ./with_dockerfile --verbose make lint test

@@ -195,5 +195,5 @@ make lint test
 or use Docker
 ```sh
 bash ./with_dockerfile.test.bash 2> test.log
-./with_dockerfile --verbose --task-id test --run-opts "--tty" --artifact test.log make lint test
+./with_dockerfile --verbose --run-opts "--tty" make lint test
 ```
