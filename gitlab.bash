@@ -22,6 +22,10 @@ comment_on_merge_request() {
   local verbose merge_request_iid comment
   while test "$#" -gt 0; do
     case "$1" in
+      --help ) 
+        echo "Usage: ${FUNCNAME[0]} [--verbose] --iid IID --comment COMMENT"
+        return 0
+        ;;
       --verbose ) verbose="yes"; shift ;;
       --iid     ) merge_request_iid=$2; shift 2 ;;
       --comment ) comment=$2; shift 2 ;;
@@ -47,6 +51,10 @@ post_build_status() {
   local verbose sha state name target_url
   while test "$#" -gt 0; do
     case "$1" in
+      --help ) 
+        echo "Usage: ${FUNCNAME[0]} [--verbose] --sha COMMIT_SHA --state STATE --name BUILD_SYSTEM_NAME --target-url BUILD_SYSTEM_URL"
+        return 0
+        ;;
       --verbose    ) verbose="yes"; shift ;;
       --sha        ) sha=$2; shift 2 ;;
       --state      ) state=$2; shift 2 ;;
@@ -83,10 +91,14 @@ hook_merge_requests() {
   local verbose hook_id filter logdir cmd
   while test "$#" -gt 0; do
     case "$1" in
+      --help ) 
+        echo "Usage: ${FUNCNAME[0]} [--verbose] --logdir DIR --hook-id ID --filter FILTER --cmd CMD"
+        return 0
+        ;;
       --verbose ) verbose="yes"; shift ;;
+      --logdir  ) logdir=$2; shift 2 ;;
       --hook-id ) hook_id=$2; shift 2 ;;
       --filter  ) filter=$2; shift 2 ;;
-      --logdir  ) logdir=$2; shift 2 ;;
       --cmd     ) cmd=$2; shift 2 ;;
       *         ) break ;;
     esac
