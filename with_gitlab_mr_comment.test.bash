@@ -24,12 +24,13 @@ echo "case: post start comment on start and success comment on success"
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=success"
 ) &
+request_validator_pid=$!
 # when:
 ./with_gitlab_mr_comment --iid 1 \
   --comment-on-start "start" --comment-on-success "success" \
   echo "Hello" >&2
 # then:
-wait "$(jobs -p)"
+wait "$request_validator_pid"
 
 
 echo "case: post fail comment on fail"
@@ -38,13 +39,14 @@ echo "case: post fail comment on fail"
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=fail"
 ) &
+request_validator_pid=$!
 # when:
 if ./with_gitlab_mr_comment --iid 1 --comment-on-fail "fail" false >&2; then
   echo "error: command should fail" >&2
   exit 1
 fi
 # then:
-wait "$(jobs -p)"
+wait "$request_validator_pid"
 
 
 echo "case: post cancel comment on cancel"

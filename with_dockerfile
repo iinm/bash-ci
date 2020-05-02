@@ -64,10 +64,12 @@ workdir=$(pwd)
 host_workdir_mount_path=/host$workdir
 work_volume=$repository.work.$task_id
 log_file=${TMPDIR:-/tmp}/${BASH_SOURCE[0]}.$repository.$task_id
+tail_log_pid=
 
 if test "$verbose" = "yes"; then
   touch "$log_file"
   tail -f "$log_file" >&2 &
+  tail_log_pid=$!
 fi
 
 log() {
@@ -106,7 +108,7 @@ on_exit() {
     with_logfile docker image rm "$image_name"
   fi
   # kill subprocess
-  if test -n "$(jobs -p)"; then kill "$(jobs -p)"; fi 
+  if test -n "$tail_log_pid"; then kill "$tail_log_pid"; fi 
   # remove log file
   rm "$log_file"
   return "$exit_status"

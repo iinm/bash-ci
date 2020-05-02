@@ -15,6 +15,7 @@ echo "case: show help message"
 
 
 echo "case: post start message on start and success message on success"
+# given:
 (
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$slack_api_port")
   body=$(echo "$req" | gawk '/^{/,/^}/')
@@ -24,32 +25,42 @@ echo "case: post start message on start and success message on success"
   body=$(echo "$req" | gawk '/^{/,/^}/')
   test "$(echo "$body" | jq -r .text)" = "success"
 ) &
+request_validator_pid=$!
+# when:
 ./with_slack_message --channel "random" \
   --message-on-start "start" --message-on-success "success" \
   true >&2
-wait "$(jobs -p)"
+# then:
+wait "$request_validator_pid"
 
 
 echo "case: post fail message on fail"
+# given:
 (
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$slack_api_port")
   body=$(echo "$req" | gawk '/^{/,/^}/')
   test "$(echo "$body" | jq -r .text)" = "fail"
 ) &
+request_validator_pid=$!
+# when:
 if ./with_slack_message --channel "random" --message-on-success "success" --message-on-fail "fail" \
   false >&2; then
   echo "error: command should fail" >&2
   exit 1
 fi
-wait "$(jobs -p)"
+# then:
+wait "$request_validator_pid"
 
 
 echo "case: post cancel message on cancel"
+# given:
 (
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$slack_api_port")
   body=$(echo "$req" | gawk '/^{/,/^}/')
   test "$(echo "$body" | jq -r .text)" = "cancel"
 ) &
+request_validator_pid=$!
+# when:
 ./with_slack_message --channel "random" --message-on-cancel "cancel" sleep 5 >&2 &
 pid=$!
 sleep 1
@@ -58,4 +69,5 @@ if wait "$pid"; then
   echo "error: command should fail" >&2
   exit 1
 fi
-wait "$(jobs -p)"
+# then:
+wait "$request_validator_pid"

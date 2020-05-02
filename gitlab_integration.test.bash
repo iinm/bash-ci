@@ -27,6 +27,7 @@ echo "case: combine mr comment and pipeline; success"
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=success"
 ) &
+request_validator_pid=$!
 # when:
 ./with_gitlab_mr_comment --iid "3" \
   --comment-on-start "start" \
@@ -37,7 +38,7 @@ echo "case: combine mr comment and pipeline; success"
     --build-system-name "Bash" --build-url "http://localhost" \
   echo "Hello" >&2
 # then:
-wait "$(jobs -p)"
+wait "$request_validator_pid"
 
 
 echo "case: combine mr comment and pipeline; fail"
@@ -56,6 +57,7 @@ echo "case: combine mr comment and pipeline; fail"
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=fail"
 ) &
+request_validator_pid=$!
 # when:
 if ./with_gitlab_mr_comment --iid "3" \
   --comment-on-start "start" \
@@ -69,7 +71,7 @@ if ./with_gitlab_mr_comment --iid "3" \
   exit 1
 fi
 # then:
-wait "$(jobs -p)"
+wait "$request_validator_pid"
 
 
 echo "case: combine mr comment and pipeline; cancel"

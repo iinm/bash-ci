@@ -12,57 +12,62 @@ export GITLAB_PROJECT_ID=001
 
 
 echo "case: list_merge_requests"
-# given:
 (
+  # given:
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  # then:
   echo "$req" | grep -qE "^GET /api/v4/projects/$GITLAB_PROJECT_ID/merge_requests\?state=opened&per_page=10000 HTTP/1.1"
   echo "$req" | grep -qE "^PRIVATE-TOKEN: ${GITLAB_PRIVATE_TOKEN}"
 ) &
+request_validator_pid=$!
 # when:
 ./gitlab.bash list_merge_requests >&2
 # then:
-wait "$(jobs -p)"
+wait "$request_validator_pid"
 
 
 echo "case: list_merge_requests fails when api returns 4xx"
 # given:
-(
-  req=$(echo -e "HTTP/1.1 400 Bad Request\n\nBad Request" | busybox nc -l -p "$api_port")
-) &
+echo -e "HTTP/1.1 400 Bad Request\n\nBad Request" | busybox nc -l -p "$api_port" >&2 &
+mock_server_pid=$!
 # when:
 if ./gitlab.bash list_merge_requests >&2; then
   echo "error: command should fail" >&2
   exit 1
 fi
 # then:
-wait "$(jobs -p)"
+wait "$mock_server_pid"
 
 
 echo "case: comment_on_merge_request"
-# given:
 (
+  # given:
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  # then:
   echo "$req" | grep -qE "^POST /api/v4/projects/$GITLAB_PROJECT_ID/merge_requests/1/notes HTTP/1.1"
   echo "$req" | grep -qE "^body=Build started"
 ) &
+request_validator_pid=$!
 # when:
 ./gitlab.bash comment_on_merge_request --iid 1 --comment "Build started" >&2
 # then:
-wait "$(jobs -p)"
+wait "$request_validator_pid"
 
 
 echo "case: post_build_status"
-# given:
 (
+  # given:
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  # then:
   echo "$req" | grep -qE "^POST /api/v4/projects/$GITLAB_PROJECT_ID/statuses/777 HTTP/1.1"
   echo "$req" | grep -qE "state=running&name=bash&target_url=http://localhost/target"
 ) &
+request_validator_pid=$!
 # when:
 ./gitlab.bash post_build_status --sha 777 --state running --name bash \
   --target-url http://localhost/target >&2
 # then:
-wait "$(jobs -p)"
+wait "$request_validator_pid"
 
 
 echo "case: post_build_status fails when invalid state is passed"

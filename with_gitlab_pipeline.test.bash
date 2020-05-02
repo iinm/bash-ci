@@ -24,11 +24,12 @@ echo "case: command success"
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^state=success&name=Bash&target_url=http://localhost"
 ) &
+request_validator_pid=$!
 # when:
 ./with_gitlab_pipeline --commit-sha 777 --build-system-name "Bash" --build-url "http://localhost" \
   echo "Hello" >&2
 # then:
-wait "$(jobs -p)"
+wait "$request_validator_pid"
 
 
 echo "case: command failed"
@@ -39,6 +40,7 @@ echo "case: command failed"
   req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^state=failed&name=Bash&target_url=http://localhost"
 ) &
+request_validator_pid=$!
 # when:
 if ./with_gitlab_pipeline --commit-sha 777 --build-system-name "Bash" --build-url "http://localhost" \
   false >&2; then
@@ -46,7 +48,7 @@ if ./with_gitlab_pipeline --commit-sha 777 --build-system-name "Bash" --build-ur
   exit 1
 fi
 # then:
-wait "$(jobs -p)"
+wait "$request_validator_pid"
 
 
 echo "case: command canceled"
