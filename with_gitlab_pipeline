@@ -16,11 +16,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=gitlab.bash
 source "$script_dir/gitlab.bash"
 
-while true; do
-  if test "$#" -eq 0; then
-    help >&2
-    exit 1
-  fi
+while test "$#" -gt 0; do
   case "$1" in
     --help              ) help; exit 0 ;;
     --commit-sha        ) commit_sha=$2; shift 2 ;;
@@ -34,6 +30,11 @@ require_envs
 : "${commit_sha?}"
 : "${build_system_name?}"
 : "${build_url?}"
+
+if test "$#" -eq 0; then
+  help >&2
+  exit 1
+fi
 
 on_exit() {
   local exit_status="$?"
