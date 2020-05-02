@@ -14,7 +14,7 @@ export GITLAB_PROJECT_ID=001
 echo "case: list_merge_requests"
 (
   # given:
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   # then:
   echo "$req" | grep -qE "^GET /api/v4/projects/$GITLAB_PROJECT_ID/merge_requests\?state=opened&per_page=10000 HTTP/1.1"
   echo "$req" | grep -qE "^PRIVATE-TOKEN: ${GITLAB_PRIVATE_TOKEN}"
@@ -42,7 +42,7 @@ wait "$mock_server_pid"
 echo "case: comment_on_merge_request"
 (
   # given:
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   # then:
   echo "$req" | grep -qE "^POST /api/v4/projects/$GITLAB_PROJECT_ID/merge_requests/1/notes HTTP/1.1"
   echo "$req" | grep -qE "^body=Build started"
@@ -57,7 +57,7 @@ wait "$request_validator_pid"
 echo "case: post_build_status"
 (
   # given:
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   # then:
   echo "$req" | grep -qE "^POST /api/v4/projects/$GITLAB_PROJECT_ID/statuses/777 HTTP/1.1"
   echo "$req" | grep -qE "state=running&name=bash&target_url=http://localhost/target"

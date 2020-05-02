@@ -19,9 +19,9 @@ echo "case: show help message"
 echo "case: post start comment on start and success comment on success"
 # given:
 (
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=start"
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=success"
 ) &
 request_validator_pid=$!
@@ -36,7 +36,7 @@ wait "$request_validator_pid"
 echo "case: post fail comment on fail"
 # given:
 (
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=fail"
 ) &
 request_validator_pid=$!
@@ -52,7 +52,7 @@ wait "$request_validator_pid"
 echo "case: post cancel comment on cancel"
 # given:
 (
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=cancel"
 ) &
 request_validator_pid=$!

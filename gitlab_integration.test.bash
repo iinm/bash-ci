@@ -15,16 +15,16 @@ echo "case: combine mr comment and pipeline; success"
 # given:
 (
   # comment start
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=start"
   # pipeline running
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^state=running&name=Bash&target_url=http://localhost"
   # pipeline success
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^state=success&name=Bash&target_url=http://localhost"
   # comment success
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=success"
 ) &
 request_validator_pid=$!
@@ -45,16 +45,16 @@ echo "case: combine mr comment and pipeline; fail"
 # given:
 (
   # comment start
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=start"
   # pipeline running
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^state=running&name=Bash&target_url=http://localhost"
   # pipeline failed
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^state=failed&name=Bash&target_url=http://localhost"
   # comment fail
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=fail"
 ) &
 request_validator_pid=$!
@@ -78,16 +78,16 @@ echo "case: combine mr comment and pipeline; cancel"
 # given:
 (
   # comment start
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=start"
   # pipeline running
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^state=running&name=Bash&target_url=http://localhost"
   # pipeline canceled
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^state=canceled&name=Bash&target_url=http://localhost"
   # comment cancel
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   echo "$req" | grep -qE "^body=cancel"
 ) &
 request_validator_pid=$!

@@ -17,11 +17,11 @@ echo "case: show help message"
 echo "case: post start message on start and success message on success"
 # given:
 (
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$slack_api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$slack_api_port")
   body=$(echo "$req" | gawk '/^{/,/^}/')
   test "$(echo "$body" | jq -r .text)" = "start"
 
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$slack_api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$slack_api_port")
   body=$(echo "$req" | gawk '/^{/,/^}/')
   test "$(echo "$body" | jq -r .text)" = "success"
 ) &
@@ -37,7 +37,7 @@ wait "$request_validator_pid"
 echo "case: post fail message on fail"
 # given:
 (
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$slack_api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$slack_api_port")
   body=$(echo "$req" | gawk '/^{/,/^}/')
   test "$(echo "$body" | jq -r .text)" = "fail"
 ) &
@@ -55,7 +55,7 @@ wait "$request_validator_pid"
 echo "case: post cancel message on cancel"
 # given:
 (
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$slack_api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$slack_api_port")
   body=$(echo "$req" | gawk '/^{/,/^}/')
   test "$(echo "$body" | jq -r .text)" = "cancel"
 ) &

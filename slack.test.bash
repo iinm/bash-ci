@@ -18,7 +18,7 @@ echo "case: post_text_message show help message"
 echo "case: post_text_message"
 (
   # given:
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   # then:
   echo "$req" | grep -qE "^POST /api/chat.postMessage HTTP/1.1"
   echo "$req" | grep -qE "^Authorization: Bearer ${SLACK_API_TOKEN}"
@@ -36,7 +36,7 @@ wait "$request_validator_pid"
 echo "case: post_text_message with custom user name and user icon"
 (
   # given:
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   # then:
   body=$(echo "$req" | gawk '/^{/,/^}/')
   test "$(echo "$body" | jq -r .username)" = "Bash"
@@ -65,7 +65,7 @@ wait "$mock_server_pid"
 echo "case: post_message"
 (
   # given:
-  req=$(echo -e "HTTP/1.1 200 OK\n\nOK" | busybox nc -l -p "$api_port")
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   # then:
   echo "$req" | grep -qE "^POST /api/chat.postMessage HTTP/1.1"
   echo "$req" | grep -qE "^Authorization: Bearer ${SLACK_API_TOKEN}"
