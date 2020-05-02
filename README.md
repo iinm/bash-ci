@@ -68,7 +68,7 @@ List merge requests.
 Run command when merge request is created / updated.
 ```sh
 ./gitlab.bash list_merge_requests \
-  ./gitlab.bash hook_merge_requests --verbose \
+  | ./gitlab.bash hook_merge_requests --verbose \
     --logdir ./tmp \
     --hook-id hook_merge_requests_test \
     --filter '.labels | map(. == "skip-ci") | any | not'
@@ -81,15 +81,14 @@ Run command when merge request is created / updated.
 - `--cmd`     : Command you want to execute when merge request is created / updated.
   - Environment variables `$MERGE_REQUEST_IID`, `$SOURCE_BRANCH`, `$TARGET_BRANCH`, and `$MERGE_REQUEST_URL` are automatically set.
 
-Trigger Jenkins job.
+Trigger Jenkins job for merge request.
 ```sh
 ./gitlab.bash list_merge_requests \
-  ./gitlab.bash hook_merge_requests --verbose \
+  | ./gitlab.bash hook_merge_requests --verbose \
     --logdir ./tmp \
     --hook-id hook_merge_requests_test \
     --filter '.labels | map(. == "skip-ci") | any | not'
     --cmd 'curl -X POST -u $JENKINS_AUTH "http://localhost/job/test/build" -F json="$(./gitlab.bash merge_request_json_for_jenkins)"' 
-
 ```
 
 Run command as GitLab Pipeline job.
@@ -134,7 +133,7 @@ Run command and send Slack message.
 ./with_slack_message --channel "random" \
   --message-on-success ":smile_cat: Success" \
   --message-on-fail ":crying_cat_face: Fail" \
-  make lint
+  make lint test
 ```
 
 Get Slack user id from commit log.
