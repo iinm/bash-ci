@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+set -eu -o pipefail
+
+help() {
+  cat << 'HELP'
+Usage: gitlab_hook_merge_requests --logdir DIR --merge-requests JSON_FILE --hooks TSV_FILE
+HELP
+}
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=gitlab.bash
+source "$script_dir/gitlab.bash"
+
+while test "$#" -gt 0; do
+  case "$1" in
+    --help           ) help; exit 0 ;;
+    --logdir         ) logdir=$2; shift 2 ;;
+    --merge-requests ) merge_requests=$2; shift 2 ;;
+    --hooks          ) hooks=$2; shift 2 ;;
+    --*              ) echo "error: unknown option $1"; exit 1 ;;
+    * ) break ;;
+  esac
+done
+
+: "${logdir?}"
+: "${merge_requests?}"
+: "${hooks?}"
+
+exit_status=0
+while IFS=$'\t' read -r hook_id filter cmd; do
+  hook_merge_requests --verbose --logdir "$logdir" \
+    --hook-id "$hook_id" --filter "$filter" --cmd "$cmd" < "$merge_requests" \
+    || exit_status=$?
+done < "$hooks"
+
+exit "$exit_status"
