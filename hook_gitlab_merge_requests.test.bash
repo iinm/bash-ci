@@ -39,11 +39,11 @@ cat > ./tmp/mr.json << MR
   }
 ]
 MR
-cat > ./tmp/hooks.tsv << HOOKS
-success	.labels | map(. == "skip-ci") | any | not	echo "success"
+cat > ./tmp/hooks.ltsv << HOOKS
+hook_id:success	filter:.labels | map(. == "skip-ci") | any | not	cmd:echo "success"
 HOOKS
 # when:
-./hook_gitlab_merge_requests --logdir ./tmp/hook_log --merge-requests ./tmp/mr.json --hooks ./tmp/hooks.tsv
+./hook_gitlab_merge_requests --logdir ./tmp/hook_log --merge-requests ./tmp/mr.json --hooks ./tmp/hooks.ltsv
 # then:
 test "$(cat ./tmp/hook_log/success.001.log)" = "success"
 
@@ -64,12 +64,12 @@ cat > ./tmp/mr.json << MR
   }
 ]
 MR
-cat > ./tmp/hooks.tsv << HOOKS
-fail	.labels | map(. == "skip-ci") | any | not	echo "fail"; false
-success	.labels | map(. == "skip-ci") | any | not	echo "success"
+cat > ./tmp/hooks.ltsv << HOOKS
+hook_id:fail	filter:.labels | map(. == "skip-ci") | any | not	cmd:echo "fail"; false
+hook_id:success	filter:.labels | map(. == "skip-ci") | any | not	cmd:echo "success"
 HOOKS
 # when:
-./hook_gitlab_merge_requests --logdir ./tmp/hook_log --merge-requests ./tmp/mr.json --hooks ./tmp/hooks.tsv || exit_status=$?
+./hook_gitlab_merge_requests --logdir ./tmp/hook_log --merge-requests ./tmp/mr.json --hooks ./tmp/hooks.ltsv || exit_status=$?
 
 # then:
 test "$exit_status" -ne 0
@@ -93,8 +93,8 @@ cat > ./tmp/mr.json << MR
   }
 ]
 MR
-cat > ./tmp/hooks.tsv << 'HOOKS'
-jenkins-example	.labels | map(. == "skip-ci") | any | not	curl --verbose --silent --show-error --fail -X POST -u user:password "http://localhost:8080/job/test/build" -F json="$(./gitlab.bash merge_request_json_for_jenkins)"
+cat > ./tmp/hooks.ltsv << 'HOOKS'
+hook_id:jenkins-example	filter:.labels | map(. == "skip-ci") | any | not	cmd:curl --verbose --silent --show-error --fail -X POST -u user:password "http://localhost:8080/job/test/build" -F json="$(./gitlab.bash merge_request_json_for_jenkins)"
 HOOKS
 (
   # given:
@@ -105,6 +105,6 @@ HOOKS
 ) &
 request_validator_pid=$!
 # when:
-./hook_gitlab_merge_requests --logdir ./tmp/hook_log --merge-requests ./tmp/mr.json --hooks ./tmp/hooks.tsv
+./hook_gitlab_merge_requests --logdir ./tmp/hook_log --merge-requests ./tmp/mr.json --hooks ./tmp/hooks.ltsv
 # then:
 wait "$request_validator_pid"

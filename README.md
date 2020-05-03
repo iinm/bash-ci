@@ -67,23 +67,22 @@ List merge requests.
 
 Run command when merge request is created / updated.
 ```sh
-./gitlab.bash list_merge_requests > ./tmp/mr.json
-cat > ./tmp/hooks.tsv << 'HOOKS'
-echo-example	.labels | map(. == "skip-ci") | any | not	echo "[$MERGE_REQUEST_IID] $SOURCE_BRANCH -> $TARGET_BRANCH ($MERGE_REQUEST_URL)"
-jenkins-example	.labels | map(. == "skip-ci") | any | not	curl --verbose --silent --show-error --fail -X POST -u $JENKINS_AUTH "http://localhost/job/test/build" -F json="$(./gitlab.bash merge_request_json_for_jenkins)"
+./gitlab.bash list_merge_requests > ./tmp/merge_requests.json
+cat > ./tmp/hooks.ltsv << 'HOOKS'
+hook_id:echo-example	filter:.labels | map(. == "skip-ci") | any | not	cmd:echo "[$MERGE_REQUEST_IID] $SOURCE_BRANCH -> $TARGET_BRANCH ($MERGE_REQUEST_URL)"
+hook_id:jenkins-example	filter:.labels | map(. == "skip-ci") | any | not	cmd:curl --verbose --silent --show-error --fail -X POST -u $JENKINS_AUTH "http://localhost/job/test/build" -F json="$(./gitlab.bash merge_request_json_for_jenkins)"
 HOOKS
 
 ./hook_gitlab_merge_requests --logdir ./tmp/hook_log \
-  --merge-requests ./tmp/mr.json --hooks ./tmp/hooks.tsv
+  --merge-requests ./tmp/merge_requests.json --hooks ./tmp/hooks.ltsv
 ```
 
 - `--logdir`          : stdout / stderr of cmd will be output this directory
 - `--merge-requests`  : merge requests JSON file
-- `--hooks`           : hooks tsv file (format: `hook_id\tfilter\tcmd`)
+- `--hooks`           : hooks ltsv file
   - `hook_id` : Unique ID (Used as a part of log file name)
   - `filter`  : [jq](https://stedolan.github.io/jq/manual/) filter to select merge request to hook
-  - `cmd`     : Command you want to execute when merge request is created / updated
-    - Environment variables `$MERGE_REQUEST_IID`, `$SOURCE_BRANCH`, `$TARGET_BRANCH`, and `$MERGE_REQUEST_URL` are automatically set
+  - `cmd`     : Command you want to execute when merge request is created / updated; Environment variables `$MERGE_REQUEST_IID`, `$SOURCE_BRANCH`, `$TARGET_BRANCH`, and `$MERGE_REQUEST_URL` are automatically set
 
 Run command as GitLab Pipeline job.
 ```sh

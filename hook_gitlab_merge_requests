@@ -27,8 +27,16 @@ done
 : "${merge_requests?}"
 : "${hooks?}"
 
+value_from_ltsv() {
+  key="${1?}"
+  sed -E "s/(^|.*\t)${key}:([^\t]*).*/\2/"
+}
+
 exit_status=0
-while IFS=$'\t' read -r hook_id filter cmd; do
+while read -r line; do
+  hook_id=$(echo "$line" | value_from_ltsv "hook_id" )
+  filter=$(echo "$line" | value_from_ltsv "filter" )
+  cmd=$(echo "$line" | value_from_ltsv "cmd" )
   hook_merge_requests --logdir "$logdir" \
     --hook-id "$hook_id" --filter "$filter" --cmd "$cmd" < "$merge_requests" \
     || exit_status=$?
