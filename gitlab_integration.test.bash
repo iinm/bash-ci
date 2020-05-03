@@ -12,20 +12,21 @@ export GITLAB_PROJECT_ID=001
 
 
 echo "case: combine mr comment and pipeline; success"
-# given:
 (
+  # given:
   # comment start
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^body=start"
+  req1=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   # pipeline running
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^state=running&name=Bash&target_url=http://localhost"
+  req2=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   # pipeline success
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^state=success&name=Bash&target_url=http://localhost"
+  req3=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   # comment success
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^body=success"
+  req4=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
+  # then:
+  echo "$req1" | grep -qE "^body=start"
+  echo "$req2" | grep -qE "^state=running&name=Bash&target_url=http://localhost"
+  echo "$req3" | grep -qE "^state=success&name=Bash&target_url=http://localhost"
+  echo "$req4" | grep -qE "^body=success"
 ) &
 request_validator_pid=$!
 # when:
@@ -42,20 +43,21 @@ wait "$request_validator_pid"
 
 
 echo "case: combine mr comment and pipeline; fail"
-# given:
 (
+  # given:
   # comment start
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^body=start"
+  req1=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   # pipeline running
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^state=running&name=Bash&target_url=http://localhost"
+  req2=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   # pipeline failed
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^state=failed&name=Bash&target_url=http://localhost"
+  req3=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   # comment fail
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^body=fail"
+  req4=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
+  # then:
+  echo "$req1" | grep -qE "^body=start"
+  echo "$req2" | grep -qE "^state=running&name=Bash&target_url=http://localhost"
+  echo "$req3" | grep -qE "^state=failed&name=Bash&target_url=http://localhost"
+  echo "$req4" | grep -qE "^body=fail"
 ) &
 request_validator_pid=$!
 # when:
@@ -73,20 +75,21 @@ wait "$request_validator_pid"
 
 
 echo "case: combine mr comment and pipeline; cancel"
-# given:
 (
+  # given:
   # comment start
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^body=start"
+  req1=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   # pipeline running
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^state=running&name=Bash&target_url=http://localhost"
+  req2=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   # pipeline canceled
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^state=canceled&name=Bash&target_url=http://localhost"
+  req3=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
   # comment cancel
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^body=cancel"
+  req4=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
+  # then:
+  echo "$req1" | grep -qE "^body=start"
+  echo "$req2" | grep -qE "^state=running&name=Bash&target_url=http://localhost"
+  echo "$req3" | grep -qE "^state=canceled&name=Bash&target_url=http://localhost"
+  echo "$req4" | grep -qE "^body=cancel"
 ) &
 request_validator_pid=$!
 # when:
