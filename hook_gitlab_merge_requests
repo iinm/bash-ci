@@ -29,7 +29,7 @@ done
 
 exit_status=0
 while IFS=$'\t' read -r hook_id filter cmd; do
-  hook_merge_requests --verbose --logdir "$logdir" \
+  hook_merge_requests --logdir "$logdir" \
     --hook-id "$hook_id" --filter "$filter" --cmd "$cmd" < "$merge_requests" \
     || exit_status=$?
 done < "$hooks"

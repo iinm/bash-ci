@@ -19,14 +19,13 @@ list_merge_requests() {
 
 # https://docs.gitlab.com/ee/api/notes.html#create-new-merge-request-note
 comment_on_merge_request() {
-  local verbose merge_request_iid comment
+  local merge_request_iid comment
   while test "$#" -gt 0; do
     case "$1" in
       --help ) 
-        echo "Usage: ${FUNCNAME[0]} [--verbose] --iid IID --comment COMMENT"
+        echo "Usage: ${FUNCNAME[0]} --iid IID --comment COMMENT"
         return 0
         ;;
-      --verbose ) verbose="yes"; shift ;;
       --iid     ) merge_request_iid=$2; shift 2 ;;
       --comment ) comment=$2; shift 2 ;;
       *         ) break ;;
@@ -35,11 +34,8 @@ comment_on_merge_request() {
   require_envs
   : "${merge_request_iid?}"
   : "${comment?}"
-  : "${verbose:="no"}"
 
-  if test "$verbose" = "yes"; then
-    log "Comment on MR; merge_request_iid: $merge_request_iid, comment: $comment"
-  fi
+  log "Comment on MR; merge_request_iid: $merge_request_iid, comment: $comment"
   curl --silent --show-error --fail -X POST \
     -H "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
     -d "body=$comment" \
@@ -48,14 +44,13 @@ comment_on_merge_request() {
 
 # https://docs.gitlab.com/ee/api/commits.html#post-the-build-status-to-a-commit
 post_build_status() {
-  local verbose sha state name target_url
+  local sha state name target_url
   while test "$#" -gt 0; do
     case "$1" in
       --help ) 
-        echo "Usage: ${FUNCNAME[0]} [--verbose] --sha COMMIT_SHA --state STATE --name BUILD_SYSTEM_NAME --target-url BUILD_SYSTEM_URL"
+        echo "Usage: ${FUNCNAME[0]} --sha COMMIT_SHA --state STATE --name BUILD_SYSTEM_NAME --target-url BUILD_SYSTEM_URL"
         return 0
         ;;
-      --verbose    ) verbose="yes"; shift ;;
       --sha        ) sha=$2; shift 2 ;;
       --state      ) state=$2; shift 2 ;;
       --name       ) name=$2; shift 2 ;;
@@ -65,7 +60,6 @@ post_build_status() {
   done
 
   require_envs
-  : "${verbose:="no"}"
   : "${sha?}"
   : "${state?}"
   : "${name?}"
@@ -76,9 +70,7 @@ post_build_status() {
     return 1
   fi
 
-  if test "$verbose" = "yes"; then
-    log "Post build status; sha=$sha, state=$state, name=$name, target_url=$target_url"
-  fi
+  log "Post build status; sha=$sha, state=$state, name=$name, target_url=$target_url"
   curl --silent --show-error --fail -X POST \
     -H "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
     "$GITLAB_BASE_URL/api/v4/projects/$GITLAB_PROJECT_ID/statuses/${sha}" \
@@ -88,14 +80,13 @@ post_build_status() {
 }
 
 hook_merge_requests() {
-  local verbose hook_id filter logdir cmd
+  local hook_id filter logdir cmd
   while test "$#" -gt 0; do
     case "$1" in
       --help ) 
-        echo "Usage: ${FUNCNAME[0]} [--verbose] --logdir DIR --hook-id ID --filter FILTER --cmd CMD"
+        echo "Usage: ${FUNCNAME[0]} --logdir DIR --hook-id ID --filter FILTER --cmd CMD"
         return 0
         ;;
-      --verbose ) verbose="yes"; shift ;;
       --logdir  ) logdir=$2; shift 2 ;;
       --hook-id ) hook_id=$2; shift 2 ;;
       --filter  ) filter=$2; shift 2 ;;
@@ -104,7 +95,6 @@ hook_merge_requests() {
     esac
   done
 
-  : "${verbose:="no"}"
   : "${hook_id?}"
   : "${filter?}"
   : "${cmd?}"
@@ -120,13 +110,13 @@ FILTER
 
   local exit_status=0
   while IFS=$'\t' read -r iid title labels source_branch target_branch sha web_url; do
-    if test "$verbose" = "yes"; then log "($hook_id) hooked \"$title\" $source_branch -> $target_branch $labels"; fi
+    log "($hook_id) hooked \"$title\" $source_branch -> $target_branch $labels"
 
     local commit_sha_short="${sha:0:7}"
     local log_file="$logdir/${hook_id}.${commit_sha_short}.log"
 
     if test -f "$log_file"; then
-      if test "$verbose" = "yes"; then log "=> skip; log exists $log_file"; fi
+      log "=> skip; log exists $log_file"
       continue
     fi
 
@@ -135,10 +125,10 @@ FILTER
       SOURCE_BRANCH="$source_branch" TARGET_BRANCH="$target_branch" \
       MERGE_REQUEST_URL="$web_url" \
       bash -ue -o pipefail -c "$cmd" &> "$log_file"; then
-      if test "$verbose" = "yes"; then log "=> success; $log_file"; fi
+      log "=> success; $log_file"
     else
       exit_status=$?
-      if test "$verbose" = "yes"; then log "=> failed; $log_file"; fi
+      log "=> failed; $log_file"
     fi
   done < <(jq -r -c "$full_filter")
   return "$exit_status"

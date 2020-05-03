@@ -45,7 +45,7 @@ fi
 comment_if_not_empty() {
   local comment="${1?}"
   if test -n "$comment"; then
-    comment_on_merge_request --verbose --iid "$iid" --comment "$comment"
+    comment_on_merge_request --iid "$iid" --comment "$comment"
   fi
 }
 

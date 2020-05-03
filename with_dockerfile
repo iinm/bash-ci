@@ -65,28 +65,14 @@ container_name=$repository.$task_id
 workdir=$(pwd)
 host_workdir_mount_path=/host$workdir
 work_volume=$repository.work.$task_id
-log_file=${TMPDIR:-/tmp}/${BASH_SOURCE[0]}.$repository.$task_id
-tail_log_pid=
 
-if test "$verbose" = "yes"; then
-  touch "$log_file"
-  tail -f "$log_file" >&2 &
-  tail_log_pid=$!
+if test "$verbose" = "no"; then
+  exec 2> /dev/null
 fi
 
 log() {
   now="$(date "+%Y-%m-%d %H:%M:%S")"
-  echo -e "$now" "$@" >> "$log_file"
-}
-
-with_logfile() {
-  "$@" &>> "$log_file"
-}
-
-show_log_if_not_verbose() {
-  if test "$verbose" = "no"; then
-    cat "$log_file" >&2
-  fi
+  echo -e "$now" "$@" >&2
 }
 
 on_exit() {
@@ -101,44 +87,38 @@ on_exit() {
   # remove work volume
   if docker volume inspect "$work_volume" &> /dev/null; then
     log "remove work volume $work_volume"
-    with_logfile docker volume rm "$work_volume"
+    docker volume rm "$work_volume" >&2
   fi
   # remove work volume
   if test "$remove_image_on_exit" = "yes" \
     && docker image inspect "$image_name" &> /dev/null; then
     log "remove image $image_name"
-    with_logfile docker image rm "$image_name"
+    docker image rm "$image_name" >&2
   fi
-  # kill subprocess
-  if test -n "$tail_log_pid"; then kill "$tail_log_pid"; fi 
-  # remove log file
-  rm "$log_file"
   return "$exit_status"
 }
 
 trap 'on_exit' EXIT
 
 log "build docker image $image_name"
-if ! with_logfile docker build --file "$dockerfile" --tag "$image_name" "$build_path" < /dev/null; then
+if ! docker build --file "$dockerfile" --tag "$image_name" "$build_path" < /dev/null >&2; then
   log "error: failed to build image"
-  show_log_if_not_verbose
   exit 1
 fi
 
 if docker volume inspect "$work_volume" &> /dev/null; then
   log "remove work volume $work_volume"
-  with_logfile docker volume rm "$work_volume"
+  docker volume rm "$work_volume"
 fi
 
 log "copy $workdir to docker volume $work_volume"
 copy_workdir_to_volume_cmd="tar -C $host_workdir_mount_path -cf - \$(cd $host_workdir_mount_path && find . ! -path . -maxdepth 1) | tar -C $workdir -xf -"
-if ! with_logfile docker run --rm --name "$container_name" \
+if ! docker run --rm --name "$container_name" \
   --volume "$workdir:$host_workdir_mount_path:ro" \
   --volume "$work_volume:$workdir" \
   "$image_name" \
   sh -c "$copy_workdir_to_volume_cmd"; then
   log "error: failed to setup work volume"
-  show_log_if_not_verbose
   exit 1
 fi
 

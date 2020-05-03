@@ -81,7 +81,7 @@ echo "case: hook_merge_requests"
 rm -rf ./tmp
 # when:
 # shellcheck disable=SC2016
-./gitlab.bash hook_merge_requests --verbose --hook-id hook_merge_requests_test \
+./gitlab.bash hook_merge_requests --hook-id hook_merge_requests_test \
   --filter '.labels | map(. == "skip-ci") | any | not' --logdir ./tmp \
   --cmd 'echo "$MERGE_REQUEST_IID $SOURCE_BRANCH -> $TARGET_BRANCH ($MERGE_REQUEST_URL)"' \
   << MERGE_REQUESTS
@@ -130,7 +130,7 @@ merge_requests=$(cat << MERGE_REQUESTS
 MERGE_REQUESTS
 )
 # when:
-./gitlab.bash hook_merge_requests --verbose --hook-id hook_merge_requests_test \
+./gitlab.bash hook_merge_requests --hook-id hook_merge_requests_test \
   --filter 'true' --logdir ./tmp --cmd 'false' <<< "$merge_requests" || exit_status=$?
 # then:
 test "$exit_status" -ne 0
@@ -142,7 +142,7 @@ rm -rf ./tmp && mkdir ./tmp
 echo -n 'previous result' > ./tmp/hook_merge_requests_test.001.log
 # when:
 # shellcheck disable=SC2016
-./gitlab.bash hook_merge_requests --verbose --hook-id hook_merge_requests_test \
+./gitlab.bash hook_merge_requests --hook-id hook_merge_requests_test \
   --filter 'true' --logdir ./tmp \
   --cmd 'echo "$MERGE_REQUEST_IID $SOURCE_BRANCH -> $TARGET_BRANCH ($MERGE_REQUEST_URL)"' \
   << MERGE_REQUESTS

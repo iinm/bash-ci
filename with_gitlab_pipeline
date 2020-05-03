@@ -40,10 +40,10 @@ fi
 on_exit() {
   local exit_status="$?"
   if test "$exit_status" -eq 0; then
-    post_build_status --verbose --sha "$commit_sha" --state 'success' \
+    post_build_status --sha "$commit_sha" --state 'success' \
       --name "$build_system_name" --target-url "$build_url"
   else
-    post_build_status --verbose --sha "$commit_sha" --state 'failed' \
+    post_build_status --sha "$commit_sha" --state 'failed' \
       --name "$build_system_name" --target-url "$build_url"
   fi
   return "$exit_status"
@@ -54,7 +54,7 @@ on_cancel() {
   trap -- EXIT
   kill -s HUP "$pid"
   wait "$pid" || exit_status=$?
-  post_build_status --verbose --sha "$commit_sha" --state 'canceled' \
+  post_build_status --sha "$commit_sha" --state 'canceled' \
     --name "$build_system_name" --target-url "$build_url"
   return "$exit_status"
 }
@@ -62,7 +62,7 @@ on_cancel() {
 trap 'on_exit' EXIT
 trap 'on_cancel' HUP INT QUIT TERM
 
-post_build_status --verbose --sha "$commit_sha" --state 'running' \
+post_build_status --sha "$commit_sha" --state 'running' \
   --name "$build_system_name"  --target-url "$build_url"
 
 "$@" &
