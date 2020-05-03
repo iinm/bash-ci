@@ -12,6 +12,7 @@ cd "$script_dir"
 
 
 echo "case: show help message"
+# when:
 ./with_dockerfile --help | grep -qE "^Usage"
 
 
@@ -29,6 +30,7 @@ rm -rf ./tmp && mkdir -p ./tmp/with_dockerfile_test
 echo "FROM busybox" > ./tmp/with_dockerfile_test/Dockerfile
 # when:
 out=$(./with_dockerfile --verbose --build-path ./tmp/with_dockerfile_test cat <<< "hello")
+# then:
 test "$out" = "hello"
 
 
