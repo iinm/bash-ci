@@ -17,18 +17,26 @@ echo "case: show help message"
 
 echo "case: container can read stdin"
 # given:
-rm -rf ./tmp
-mkdir -p ./tmp/with_dockerfile_test
+rm -rf ./tmp && mkdir -p ./tmp/with_dockerfile_test
 echo "FROM busybox" > ./tmp/with_dockerfile_test/Dockerfile
 # when:
 out=$(./with_dockerfile --verbose --build-path ./tmp/with_dockerfile_test cat <<< "hello")
 test "$out" = "hello"
 
 
+echo "case: default image name is directory name"
+# given:
+rm -rf ./tmp && mkdir -p ./tmp/with_dockerfile_test
+echo "FROM busybox" > ./tmp/with_dockerfile_test/Dockerfile
+# when:
+./with_dockerfile --verbose --build-path ./tmp/with_dockerfile_test true
+# then:
+docker image inspect with_dockerfile_test:latest >&2
+
+
 echo "case: copy artifact on exit"
 # given:
-rm -rf ./tmp
-mkdir -p ./tmp/with_dockerfile_test
+rm -rf ./tmp && mkdir -p ./tmp/with_dockerfile_test
 echo "FROM busybox" > ./tmp/with_dockerfile_test/Dockerfile
 # when:
 ./with_dockerfile --verbose --build-path ./tmp/with_dockerfile_test \
@@ -40,8 +48,7 @@ test -f ./artifacts/ls/out.txt
 echo "case: use docker volume as cache"
 # given:
 docker volume rm with-dockerfile-test-npm-user-cache >&2|| true
-rm -rf ./tmp
-mkdir -p ./tmp/with_dockerfile_test
+rm -rf ./tmp && mkdir -p ./tmp/with_dockerfile_test
 echo "FROM node:current-alpine" > ./tmp/with_dockerfile_test/Dockerfile
 # when:
 ./with_dockerfile --verbose --build-path ./tmp/with_dockerfile_test \
@@ -50,3 +57,26 @@ echo "FROM node:current-alpine" > ./tmp/with_dockerfile_test/Dockerfile
 # then:
 docker run --rm --volume with-dockerfile-test-npm-user-cache:/root/.npm --workdir /root/.npm \
   busybox ls >&2
+
+
+echo "case: specify image name"
+# given:
+rm -rf ./tmp && mkdir -p ./tmp/with_dockerfile_test
+echo "FROM busybox" > ./tmp/with_dockerfile_test/Dockerfile
+# when:
+./with_dockerfile --verbose --build-path ./tmp/with_dockerfile_test --image-name with_dockerfile_test_specify_name:dev true
+# then:
+docker image rm with_dockerfile_test_specify_name:dev >&2
+
+
+echo "case: remove image on exit"
+# given:
+rm -rf ./tmp && mkdir -p ./tmp/with_dockerfile_test
+echo "FROM busybox" > ./tmp/with_dockerfile_test/Dockerfile
+# when:
+./with_dockerfile --verbose --build-path ./tmp/with_dockerfile_test --remove-image-on-exit true
+# then:
+if docker image inspect with_dockerfile_test:latest > /dev/null; then
+  echo "error: image should be removed" >&2
+  exit 1
+fi
