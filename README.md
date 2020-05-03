@@ -67,12 +67,14 @@ List merge requests.
 
 Run command when merge request is created / updated.
 ```sh
-./gitlab.bash list_merge_requests \
-  | ./gitlab.bash hook_merge_requests --verbose \
-    --logdir ./tmp \
-    --hook-id hook_merge_requests_test \
-    --filter '.labels | map(. == "skip-ci") | any | not'
-    --cmd 'echo "[$MERGE_REQUEST_IID] $SOURCE_BRANCH -> $TARGET_BRANCH ($MERGE_REQUEST_URL)"' 
+./gitlab.bash list_merge_requests > ./tmp/mr.json
+cat > ./tmp/hooks.tsv << 'HOOKS'
+echo-example	.labels | map(. == "skip-ci") | any | not	echo "[$MERGE_REQUEST_IID] $SOURCE_BRANCH -> $TARGET_BRANCH ($MERGE_REQUEST_URL)"
+jenkins-example	.labels | map(. == "skip-ci") | any | not	curl -X POST -u $JENKINS_AUTH "http://localhost/job/test/build" -F json="$(./gitlab.bash merge_request_json_for_jenkins)"
+HOOKS
+
+./hook_gitlab_merge_requests --logdir ./tmp/hook_log \
+  --merge-requests ./tmp/mr.json --hooks ./tmp/hooks.tsv
 ```
 
 - `--logdir`  : stdout / stderr of cmd will be output this directory.
@@ -80,16 +82,6 @@ Run command when merge request is created / updated.
 - `--filter`  : [jq](https://stedolan.github.io/jq/manual/) filter to select merge request to hook.
 - `--cmd`     : Command you want to execute when merge request is created / updated.
   - Environment variables `$MERGE_REQUEST_IID`, `$SOURCE_BRANCH`, `$TARGET_BRANCH`, and `$MERGE_REQUEST_URL` are automatically set.
-
-Trigger Jenkins job for merge request.
-```sh
-./gitlab.bash list_merge_requests \
-  | ./gitlab.bash hook_merge_requests --verbose \
-    --logdir ./tmp \
-    --hook-id hook_merge_requests_test \
-    --filter '.labels | map(. == "skip-ci") | any | not'
-    --cmd 'curl -X POST -u $JENKINS_AUTH "http://localhost/job/test/build" -F json="$(./gitlab.bash merge_request_json_for_jenkins)"' 
-```
 
 Run command as GitLab Pipeline job.
 ```sh
