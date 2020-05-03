@@ -21,6 +21,7 @@ SCRIPT
 out=$(./run_tests.bash --logfile ./tmp/success-test.log ./tmp/*.test.bash)
 # then:
 expected=$(cat << EXPECTED
+
 $(tput setaf 4)test: ./tmp/success.test.bash$(tput sgr0)
 case: success
 $(tput setaf 2)all case passed$(tput sgr0)
@@ -45,6 +46,7 @@ if out=$(./run_tests.bash --logfile ./tmp/fail-test.log ./tmp/*.test.bash); then
 fi
 # then:
 expected=$(cat << EXPECTED
+
 $(tput setaf 4)test: ./tmp/fail.test.bash$(tput sgr0)
 case: fail
 $(tput setaf 1)failed$(tput sgr0)
@@ -75,6 +77,7 @@ if out=$(./run_tests.bash --logfile ./tmp/fail-test.log ./tmp/{fail,success}.tes
 fi
 # then:
 expected=$(cat << EXPECTED
+
 $(tput setaf 4)test: ./tmp/fail.test.bash$(tput sgr0)
 case: fail
 $(tput setaf 1)failed$(tput sgr0)
