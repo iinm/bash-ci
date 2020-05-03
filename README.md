@@ -70,7 +70,7 @@ Run command when merge request is created / updated.
 ./gitlab.bash list_merge_requests > ./tmp/mr.json
 cat > ./tmp/hooks.tsv << 'HOOKS'
 echo-example	.labels | map(. == "skip-ci") | any | not	echo "[$MERGE_REQUEST_IID] $SOURCE_BRANCH -> $TARGET_BRANCH ($MERGE_REQUEST_URL)"
-jenkins-example	.labels | map(. == "skip-ci") | any | not	curl -X POST -u $JENKINS_AUTH "http://localhost/job/test/build" -F json="$(./gitlab.bash merge_request_json_for_jenkins)"
+jenkins-example	.labels | map(. == "skip-ci") | any | not	curl --verbose --silent --show-error --fail -X POST -u $JENKINS_AUTH "http://localhost/job/test/build" -F json="$(./gitlab.bash merge_request_json_for_jenkins)"
 HOOKS
 
 ./hook_gitlab_merge_requests --logdir ./tmp/hook_log \

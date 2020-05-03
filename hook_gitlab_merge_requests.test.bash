@@ -94,7 +94,7 @@ cat > ./tmp/mr.json << MR
 ]
 MR
 cat > ./tmp/hooks.tsv << 'HOOKS'
-jenkins-example	.labels | map(. == "skip-ci") | any | not	curl -X POST -u user:password "http://localhost:8080/job/test/build" -F json="$(./gitlab.bash merge_request_json_for_jenkins)"
+jenkins-example	.labels | map(. == "skip-ci") | any | not	curl --verbose --silent --show-error --fail -X POST -u user:password "http://localhost:8080/job/test/build" -F json="$(./gitlab.bash merge_request_json_for_jenkins)"
 HOOKS
 (
   # given:
