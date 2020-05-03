@@ -101,7 +101,7 @@ HOOKS
   req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p 8080)
   # then:
   echo "$req" | grep -qE '^POST /job/test/build HTTP/1.1'
-  echo "$req" | grep -q '{"parameter":[{"name":"MERGE_REQUEST_IID","value":"1"},{"name":"SOURCE_BRANCH","value":"source1"},{"name":"TARGET_BRANCH","value":"target1"},{"name":"MERGE_REQUEST_URL","value":"http://localhost/test1"}]}'
+  echo "$req" | grep -qE '^{"parameter":\[{"name":"MERGE_REQUEST_IID","value":"1"},{"name":"SOURCE_BRANCH","value":"source1"},{"name":"TARGET_BRANCH","value":"target1"},{"name":"MERGE_REQUEST_URL","value":"http://localhost/test1"}\]}'
 ) &
 request_validator_pid=$!
 # when:
