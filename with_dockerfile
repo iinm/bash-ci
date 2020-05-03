@@ -29,11 +29,7 @@ HELP
 
 artifacts=()
 
-while true; do
-  if test "$#" -eq 0; then
-    help >&2
-    exit 1
-  fi
+while test "$#" -gt 0; do
   case "$1" in
     --help                 ) help; exit 0 ;;
     --verbose              ) verbose="yes"; shift ;;
@@ -58,6 +54,11 @@ done
 : "${task_id:="$(env LC_CTYPE=C tr -dc '[:alnum:]' < /dev/urandom 2> /dev/null | head -c 10 || true)"}"
 : "${artifacts_save_path:="$(pwd)/artifacts/$task_id"}"
 : "${remove_image_on_exit:="no"}"
+
+if test "$#" -eq 0; then
+  help >&2
+  exit 1
+fi
 
 repository=$(echo "$image_name" | cut -d ':' -f 1)
 container_name=$repository.$task_id
