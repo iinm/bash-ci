@@ -187,6 +187,7 @@ Requirements
 - shellcheck
 - busybox
 - gawk
+- docker
 
 ```sh
 make lint test
