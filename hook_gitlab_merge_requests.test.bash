@@ -17,11 +17,9 @@ echo "case: show help message"
 
 echo "case: error on unknown option"
 # when:
-if out=$(./hook_gitlab_merge_requests --no-such-option); then
-  echo "error: command should fail" >&2
-  exit 1
-fi
+out=$(./hook_gitlab_merge_requests --no-such-option) || exit_status=$?
 # then:
+test "$exit_status" -ne 0
 echo "$out" | grep -qE "^error: unknown option --no-such-option"
 
 

@@ -40,11 +40,9 @@ echo "case: fail"
 test 1 -eq 2 >&2
 SCRIPT
 # when:
-if out=$(./run_tests.bash --logfile ./tmp/fail-test.log ./tmp/*.test.bash); then
-  echo "error: command should fail" >&2
-  exit 1
-fi
+out=$(./run_tests.bash --logfile ./tmp/fail-test.log ./tmp/*.test.bash) || exit_status=$?
 # then:
+test "$exit_status" -ne 0
 expected=$(cat << EXPECTED
 
 $(tput setaf 4)test: ./tmp/fail.test.bash$(tput sgr0)
@@ -71,11 +69,9 @@ echo "case: fail"
 test 1 -eq 2 >&2
 SCRIPT
 # when:
-if out=$(./run_tests.bash --logfile ./tmp/fail-test.log ./tmp/{fail,success}.test.bash); then
-  echo "error: command should fail" >&2
-  exit 1
-fi
+out=$(./run_tests.bash --logfile ./tmp/fail-test.log ./tmp/{fail,success}.test.bash) || exit_status=$?
 # then:
+test "$exit_status" -ne 0
 expected=$(cat << EXPECTED
 
 $(tput setaf 4)test: ./tmp/fail.test.bash$(tput sgr0)

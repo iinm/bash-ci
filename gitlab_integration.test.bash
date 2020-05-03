@@ -59,18 +59,16 @@ echo "case: combine mr comment and pipeline; fail"
 ) &
 request_validator_pid=$!
 # when:
-if ./with_gitlab_mr_comment --iid "3" \
+./with_gitlab_mr_comment --iid "3" \
   --comment-on-start "start" \
   --comment-on-cancel "cancel" \
   --comment-on-success "success" \
   --comment-on-fail "fail" \
   ./with_gitlab_pipeline --commit-sha "777" \
     --build-system-name "Bash" --build-url "http://localhost" \
-  false >&2; then
-  echo "error: command should fail" >&2
-  exit 1
-fi
+    false >&2 || exit_status=$?
 # then:
+test "$exit_status" -ne 0
 wait "$request_validator_pid"
 
 
@@ -103,9 +101,7 @@ request_validator_pid=$!
 pid=$!
 sleep 1
 kill -s HUP "$pid"
-if wait "$pid"; then
-  echo "error: command should fail" >&2
-  exit 1
-fi
+wait "$pid" || exit_status=$?
 # then:
+test "$exit_status" -ne 0
 wait "$request_validator_pid"

@@ -31,11 +31,9 @@ echo "case: list_merge_requests fails when api returns 4xx"
 echo -e "HTTP/1.1 400 Bad Request\n\nBad Request" | busybox nc -l -p "$api_port" >&2 &
 mock_server_pid=$!
 # when:
-if ./gitlab.bash list_merge_requests >&2; then
-  echo "error: command should fail" >&2
-  exit 1
-fi
+./gitlab.bash list_merge_requests >&2 || exit_status=$?
 # then:
+test "$exit_status" -ne 0
 wait "$mock_server_pid"
 
 
@@ -72,11 +70,10 @@ wait "$request_validator_pid"
 
 echo "case: post_build_status fails when invalid state is passed"
 # when:
-if ./gitlab.bash post_build_status --sha 777 --state no-such-state --name bash \
-  --target-url http://localhost/target >&2; then
-  echo "error: command should fail" >&2
-  exit 1
-fi
+./gitlab.bash post_build_status --sha 777 --state no-such-state --name bash \
+  --target-url http://localhost/target >&2 || exit_status=$?
+# then:
+test "$exit_status" -ne 0
 
 
 echo "case: hook_merge_requests"

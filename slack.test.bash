@@ -55,10 +55,9 @@ echo "case: post_text_message fails when API returns 4xx"
 echo -e "HTTP/1.1 400 Bad Request\n\nBad Request" | busybox nc -l -p "$api_port" >&2 &
 mock_server_pid=$!
 # when:
-if ./slack.bash post_text_message --channel "random" --text "Hello World!" >&2; then
-  echo "error: command should fail" >&2
-fi
+./slack.bash post_text_message --channel "random" --text "Hello World!" >&2 || exit_status=$?
 # then:
+test "$exit_status" -ne 0
 wait "$mock_server_pid"
 
 

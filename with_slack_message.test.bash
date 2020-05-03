@@ -16,11 +16,9 @@ echo "case: show help message"
 
 echo "case: error on unknown option"
 # when:
-if out=$(./with_slack_message --no-such-option); then
-  echo "error: command should fail" >&2
-  exit 1
-fi
+out=$(./with_slack_message --no-such-option) || exit_status=$?
 # then:
+test "$exit_status" -ne 0
 echo "$out" | grep -qE "^error: unknown option --no-such-option"
 
 
@@ -54,12 +52,10 @@ echo "case: post fail message on fail"
 ) &
 request_validator_pid=$!
 # when:
-if ./with_slack_message --channel "random" --message-on-success "success" --message-on-fail "fail" \
-  false >&2; then
-  echo "error: command should fail" >&2
-  exit 1
-fi
+./with_slack_message --channel "random" --message-on-success "success" --message-on-fail "fail" \
+  false >&2 || exit_status=$?
 # then:
+test "$exit_status" -ne 0
 wait "$request_validator_pid"
 
 
@@ -77,9 +73,7 @@ request_validator_pid=$!
 pid=$!
 sleep 1
 kill -s HUP "$pid"
-if wait "$pid"; then
-  echo "error: command should fail" >&2
-  exit 1
-fi
+wait "$pid" || exit_status=$?
 # then:
+test "$exit_status" -ne 0
 wait "$request_validator_pid"
