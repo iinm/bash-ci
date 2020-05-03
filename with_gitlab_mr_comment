@@ -25,6 +25,7 @@ while test "$#" -gt 0; do
     --comment-on-cancel  ) comment_on_cancel=$2; shift 2 ;;
     --comment-on-success ) comment_on_success=$2; shift 2 ;;
     --comment-on-fail    ) comment_on_fail=$2; shift 2 ;;
+    --*                  ) echo "error: unknown option $1"; exit 1 ;;
     *                    ) break ;;
   esac
 done

@@ -45,6 +45,7 @@ while true; do
     --artifact             ) artifacts=("${artifacts[@]}" "$2"); shift 2 ;;
     --artifacts-save-path  ) artifacts_save_path=$2; shift 2 ;;
     --remove-image-on-exit ) remove_image_on_exit="yes"; shift ;;
+    --*                    ) echo "error: unknown option $1"; exit 1 ;;
     * ) break ;;
   esac
 done
