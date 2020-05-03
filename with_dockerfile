@@ -54,7 +54,7 @@ done
 : "${dockerfile:="$build_path/Dockerfile"}"
 : "${image_name:="$(basename "$build_path"):latest"}"
 : "${run_opts:=}"
-: "${task_id:="$(env LC_CTYPE=C tr -dc '[:alnum:]' < /dev/urandom | head -c 10 || true)"}"
+: "${task_id:="$(env LC_CTYPE=C tr -dc '[:alnum:]' < /dev/urandom 2> /dev/null | head -c 10 || true)"}"
 : "${artifacts_save_path:="$(pwd)/artifacts/$task_id"}"
 : "${remove_image_on_exit:="no"}"
 
