@@ -35,6 +35,7 @@ test "$out" = "hello"
 echo "case: default image name is directory name"
 # given:
 rm -rf ./tmp && mkdir -p ./tmp/with_dockerfile_test
+docker image rm with_dockerfile_test:latest >&2 || true
 echo "FROM busybox" > ./tmp/with_dockerfile_test/Dockerfile
 # when:
 ./with_dockerfile --verbose --build-path ./tmp/with_dockerfile_test true
@@ -70,6 +71,7 @@ docker run --rm --volume with-dockerfile-test-npm-user-cache:/root/.npm --workdi
 echo "case: specify image name"
 # given:
 rm -rf ./tmp && mkdir -p ./tmp/with_dockerfile_test
+docker image rm with_dockerfile_test_specify_name:dev >&2 || true
 echo "FROM busybox" > ./tmp/with_dockerfile_test/Dockerfile
 # when:
 ./with_dockerfile --verbose --build-path ./tmp/with_dockerfile_test --image-name with_dockerfile_test_specify_name:dev true
@@ -84,7 +86,5 @@ echo "FROM busybox" > ./tmp/with_dockerfile_test/Dockerfile
 # when:
 ./with_dockerfile --verbose --build-path ./tmp/with_dockerfile_test --remove-image-on-exit true
 # then:
-if docker image inspect with_dockerfile_test:latest > /dev/null; then
-  echo "error: image should be removed" >&2
-  exit 1
-fi
+docker image inspect with_dockerfile_test:latest >&2 || exit_status=$?
+test "$exit_status" -ne 0
