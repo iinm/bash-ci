@@ -15,14 +15,14 @@ echo "case: show help message"
 
 
 echo "case: post start message on start and success message on success"
-# given:
 (
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$slack_api_port")
-  body=$(echo "$req" | gawk '/^{/,/^}/')
+  # given:
+  req1=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$slack_api_port")
+  req2=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$slack_api_port")
+  # then:
+  body=$(echo "$req1" | gawk '/^{/,/^}/')
   test "$(echo "$body" | jq -r .text)" = "start"
-
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$slack_api_port")
-  body=$(echo "$req" | gawk '/^{/,/^}/')
+  body=$(echo "$req2" | gawk '/^{/,/^}/')
   test "$(echo "$body" | jq -r .text)" = "success"
 ) &
 request_validator_pid=$!
@@ -35,9 +35,10 @@ wait "$request_validator_pid"
 
 
 echo "case: post fail message on fail"
-# given:
 (
+  # given:
   req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$slack_api_port")
+  # then:
   body=$(echo "$req" | gawk '/^{/,/^}/')
   test "$(echo "$body" | jq -r .text)" = "fail"
 ) &
@@ -53,9 +54,10 @@ wait "$request_validator_pid"
 
 
 echo "case: post cancel message on cancel"
-# given:
 (
+  # given:
   req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$slack_api_port")
+  # then:
   body=$(echo "$req" | gawk '/^{/,/^}/')
   test "$(echo "$body" | jq -r .text)" = "cancel"
 ) &

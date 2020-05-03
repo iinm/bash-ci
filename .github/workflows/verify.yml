@@ -17,4 +17,5 @@ jobs:
       run: env TERM=xterm ./run_tests.bash ./with_dockerfile.test.bash
 
     - name: lint test
-      run: ./with_dockerfile --verbose env TERM=xterm make lint test
+      run: |
+        for try in 1 2 3; do echo "try: $try"; ./with_dockerfile --verbose env TERM=xterm make lint test && break; done
