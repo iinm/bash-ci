@@ -77,7 +77,6 @@ HOOKS
 ```
 
 - `--logdir`          : stdout / stderr of cmd will be output this directory
-- `--merge-requests`  : merge requests JSON file
 - `--hooks`           : hooks ltsv file
   - `hook_id` : Unique ID (Used as a part of log file name)
   - `filter`  : [jq](https://stedolan.github.io/jq/manual/) filter to select merge request to hook
