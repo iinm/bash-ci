@@ -14,7 +14,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: test with_dockerfile
-      run: bash ./with_dockerfile.test.bash 2> test.log
+      run: env TERM=xterm ./run_tests.bash ./with_dockerfile.test.bash
 
     - name: lint test
-      run: ./with_dockerfile --verbose make lint test
+      run: ./with_dockerfile --verbose env TERM=xterm make lint test
