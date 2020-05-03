@@ -67,16 +67,25 @@ host_workdir_mount_path=/host$workdir
 work_volume=$repository.work.$task_id
 
 if test "$verbose" = "no"; then
+  exec {stderr}>&2
   exec 2> /dev/null
 fi
+exec {stdout}>&1
+exec 1>&2
 
 log() {
   now="$(date "+%Y-%m-%d %H:%M:%S")"
-  echo -e "$now" "$@" >&2
+  echo -e "$now" "$@"
 }
 
 on_exit() {
   local exit_status="$?"
+
+  if test "$verbose" = "no"; then
+    exec 2> /dev/null
+  fi
+  exec 1>&2
+
   # copy artifacts to host directory
   if test "${#artifacts[@]}" -gt 0; then
     log "copy artifacts from docker volume to host directory ${artifacts[*]} -> $artifacts_save_path"
@@ -87,13 +96,13 @@ on_exit() {
   # remove work volume
   if docker volume inspect "$work_volume" &> /dev/null; then
     log "remove work volume $work_volume"
-    docker volume rm "$work_volume" >&2
+    docker volume rm "$work_volume"
   fi
-  # remove work volume
+  # remove image
   if test "$remove_image_on_exit" = "yes" \
     && docker image inspect "$image_name" &> /dev/null; then
     log "remove image $image_name"
-    docker image rm "$image_name" >&2
+    docker image rm "$image_name"
   fi
   return "$exit_status"
 }
@@ -101,7 +110,7 @@ on_exit() {
 trap 'on_exit' EXIT
 
 log "build docker image $image_name"
-if ! docker build --file "$dockerfile" --tag "$image_name" "$build_path" < /dev/null >&2; then
+if ! docker build --file "$dockerfile" --tag "$image_name" "$build_path" < /dev/null; then
   log "error: failed to build image"
   exit 1
 fi
@@ -123,6 +132,13 @@ if ! docker run --rm --name "$container_name" \
 fi
 
 log "run (" "$@" ") on container $container_name"
+
+# restore stdout, stderr
+if test "$verbose" = "no"; then
+  exec 2>&${stderr} {stderr}>&-
+fi
+exec 1>&${stdout} {stdout}>&-
+
 # shellcheck disable=SC2068
 docker run --rm --interactive --name "$container_name" --workdir "$workdir" \
   --volume "$work_volume:$workdir" \
