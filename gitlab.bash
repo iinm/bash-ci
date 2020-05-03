@@ -120,7 +120,7 @@ FILTER
 
   local exit_status=0
   while IFS=$'\t' read -r iid title labels source_branch target_branch sha web_url; do
-    if test "$verbose" = "yes"; then log "hooked \"$title\" $labels $source_branch -> $target_branch"; fi
+    if test "$verbose" = "yes"; then log "($hook_id) hooked \"$title\" $source_branch -> $target_branch $labels"; fi
 
     local commit_sha_short="${sha:0:7}"
     local log_file="$logdir/${hook_id}.${commit_sha_short}.log"
@@ -137,8 +137,8 @@ FILTER
       bash -ue -o pipefail -c "$cmd" &> "$log_file"; then
       if test "$verbose" = "yes"; then log "=> success; $log_file"; fi
     else
-      if test "$verbose" = "yes"; then log "=> failed; $log_file"; fi
       exit_status=$?
+      if test "$verbose" = "yes"; then log "=> failed; $log_file"; fi
     fi
   done < <(jq -r -c "$full_filter")
   return "$exit_status"

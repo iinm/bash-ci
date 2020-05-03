@@ -87,7 +87,7 @@ rm -rf ./tmp
 ./gitlab.bash hook_merge_requests --verbose --hook-id hook_merge_requests_test \
   --filter '.labels | map(. == "skip-ci") | any | not' --logdir ./tmp \
   --cmd 'echo "$MERGE_REQUEST_IID $SOURCE_BRANCH -> $TARGET_BRANCH ($MERGE_REQUEST_URL)"' \
-  << 'MERGE_REQUESTS'
+  << MERGE_REQUESTS
 [
   {
     "iid": "1",
@@ -115,17 +115,40 @@ test -f ./tmp/hook_merge_requests_test.002.log
 test "$(cat ./tmp/hook_merge_requests_test.002.log)" = "2 source2 -> target2 (http://localhost/test2)"
 
 
+echo "case: hook_merge_requests fail if cmd fail"
+# given:
+rm -rf ./tmp && mkdir ./tmp
+merge_requests=$(cat << MERGE_REQUESTS
+[
+  {
+    "iid": "1",
+    "title": "test mr 1",
+    "sha": "001",
+    "labels": ["skip-ci"],
+    "source_branch": "source1",
+    "target_branch": "target1",
+    "web_url": "http://localhost/test1"
+  }
+]
+MERGE_REQUESTS
+)
+# when:
+./gitlab.bash hook_merge_requests --verbose --hook-id hook_merge_requests_test \
+  --filter 'true' --logdir ./tmp --cmd 'false' <<< "$merge_requests" || exit_status=$?
+# then:
+test "$exit_status" -ne 0
+
+
 echo "case: hook_merge_requests skip execution if log exists"
 # given:
-rm -rf ./tmp
-mkdir ./tmp
+rm -rf ./tmp && mkdir ./tmp
 echo -n 'previous result' > ./tmp/hook_merge_requests_test.001.log
 # when:
 # shellcheck disable=SC2016
 ./gitlab.bash hook_merge_requests --verbose --hook-id hook_merge_requests_test \
   --filter 'true' --logdir ./tmp \
   --cmd 'echo "$MERGE_REQUEST_IID $SOURCE_BRANCH -> $TARGET_BRANCH ($MERGE_REQUEST_URL)"' \
-  << 'MERGE_REQUESTS'
+  << MERGE_REQUESTS
 [
   {
     "iid": "1",
