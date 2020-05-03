@@ -77,11 +77,13 @@ HOOKS
   --merge-requests ./tmp/mr.json --hooks ./tmp/hooks.tsv
 ```
 
-- `--logdir`  : stdout / stderr of cmd will be output this directory.
-- `--hook-id` : Hook id must be unique. (Used as a part of log file name)
-- `--filter`  : [jq](https://stedolan.github.io/jq/manual/) filter to select merge request to hook.
-- `--cmd`     : Command you want to execute when merge request is created / updated.
-  - Environment variables `$MERGE_REQUEST_IID`, `$SOURCE_BRANCH`, `$TARGET_BRANCH`, and `$MERGE_REQUEST_URL` are automatically set.
+- `--logdir`          : stdout / stderr of cmd will be output this directory
+- `--merge-requests`  : merge requests JSON file
+- `--hooks`           : hooks tsv file (format: `hook_id\tfilter\tcmd`)
+  - `hook_id` : Unique ID (Used as a part of log file name)
+  - `filter`  : [jq](https://stedolan.github.io/jq/manual/) filter to select merge request to hook
+  - `cmd`     : Command you want to execute when merge request is created / updated
+    - Environment variables `$MERGE_REQUEST_IID`, `$SOURCE_BRANCH`, `$TARGET_BRANCH`, and `$MERGE_REQUEST_URL` are automatically set
 
 Run command as GitLab Pipeline job.
 ```sh
