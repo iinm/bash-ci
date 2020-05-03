@@ -30,9 +30,9 @@ echo "case: post start message on start and success message on success"
   req1=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$slack_api_port")
   req2=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$slack_api_port")
   # then:
-  body=$(echo "$req1" | gawk '/^{/,/^}/')
+  body=$(echo "$req1" | grep -A 100 -E '^\s+$')
   test "$(echo "$body" | jq -r .text)" = "start"
-  body=$(echo "$req2" | gawk '/^{/,/^}/')
+  body=$(echo "$req2" | grep -A 100 -E '^\s+$')
   test "$(echo "$body" | jq -r .text)" = "success"
 ) &
 request_validator_pid=$!
@@ -49,7 +49,7 @@ echo "case: post fail message on fail"
   # given:
   req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$slack_api_port")
   # then:
-  body=$(echo "$req" | gawk '/^{/,/^}/')
+  body=$(echo "$req" | grep -A 100 -E '^\s+$')
   test "$(echo "$body" | jq -r .text)" = "fail"
 ) &
 request_validator_pid=$!
@@ -68,7 +68,7 @@ echo "case: post cancel message on cancel"
   # given:
   req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$slack_api_port")
   # then:
-  body=$(echo "$req" | gawk '/^{/,/^}/')
+  body=$(echo "$req" | grep -A 100 -E '^\s+$')
   test "$(echo "$body" | jq -r .text)" = "cancel"
 ) &
 request_validator_pid=$!

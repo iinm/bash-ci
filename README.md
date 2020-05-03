@@ -186,7 +186,7 @@ EOF
 Requirements
 - shellcheck
 - busybox
-- gawk
+- ncurses
 - docker
 
 ```sh
