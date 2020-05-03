@@ -17,12 +17,13 @@ echo "case: show help message"
 
 
 echo "case: command success"
-# given:
 (
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^state=running&name=Bash&target_url=http://localhost"
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^state=success&name=Bash&target_url=http://localhost"
+  # given:
+  req1=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
+  req2=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
+  # then:
+  echo "$req1" | grep -qE "^state=running&name=Bash&target_url=http://localhost"
+  echo "$req2" | grep -qE "^state=success&name=Bash&target_url=http://localhost"
 ) &
 request_validator_pid=$!
 # when:
@@ -33,12 +34,13 @@ wait "$request_validator_pid"
 
 
 echo "case: command failed"
-# given:
 (
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^state=running&name=Bash&target_url=http://localhost"
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^state=failed&name=Bash&target_url=http://localhost"
+  # given:
+  req1=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
+  req2=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
+  # then:
+  echo "$req1" | grep -qE "^state=running&name=Bash&target_url=http://localhost"
+  echo "$req2" | grep -qE "^state=failed&name=Bash&target_url=http://localhost"
 ) &
 request_validator_pid=$!
 # when:
@@ -52,12 +54,13 @@ wait "$request_validator_pid"
 
 
 echo "case: command canceled"
-# given:
 (
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^state=running&name=Bash&target_url=http://localhost"
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  echo "$req" | grep -qE "^state=canceled&name=Bash&target_url=http://localhost"
+  # given:
+  req1=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
+  req2=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
+  # then:
+  echo "$req1" | grep -qE "^state=running&name=Bash&target_url=http://localhost"
+  echo "$req2" | grep -qE "^state=canceled&name=Bash&target_url=http://localhost"
 ) &
 request_validator_pid=$!
 # when:
