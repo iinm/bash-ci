@@ -28,6 +28,7 @@ comment_on_merge_request() {
         ;;
       --iid     ) merge_request_iid=$2; shift 2 ;;
       --comment ) comment=$2; shift 2 ;;
+      --*       ) echo "error: unknown option $1"; return 1 ;;
       *         ) break ;;
     esac
   done
@@ -55,6 +56,7 @@ post_build_status() {
       --state      ) state=$2; shift 2 ;;
       --name       ) name=$2; shift 2 ;;
       --target-url ) target_url=$2; shift 2 ;;
+      --*          ) echo "error: unknown option $1"; return 1 ;;
       *            ) break ;;
     esac
   done
@@ -80,17 +82,53 @@ post_build_status() {
 }
 
 hook_merge_requests() {
+  while test "$#" -gt 0; do
+    case "$1" in
+      --help )
+        echo "Usage: ${FUNCNAME[0]} --logdir DIR --hooks TSV_FILE < MERGE_REQUESTS_JSON_FILE"
+        return 0
+        ;;
+      --logdir ) logdir=$2; shift 2 ;;
+      --hooks  ) hooks=$2; shift 2 ;;
+      --*      ) echo "error: unknown option $1"; return 1 ;;
+      *        ) break ;;
+    esac
+  done
+
+  : "${logdir?}"
+  : "${hooks?}"
+  merge_requests=$(cat -)
+
+  exit_status=0
+  while read -r line; do
+    hook_id=$(echo "$line" | value_from_ltsv "hook_id")
+    filter=$(echo "$line" | value_from_ltsv "filter")
+    cmd=$(echo "$line" | value_from_ltsv "cmd")
+    echo "$merge_requests" \
+      | hook_merge_requests_and_run_command --logdir "$logdir" --hook-id "$hook_id" --filter "$filter" --cmd "$cmd" || exit_status=$?
+  done < "$hooks"
+
+  return "$exit_status"
+}
+
+value_from_ltsv() {
+  key="${1?}"
+  sed -E "s/(^|.*\t)${key}:([^\t]*).*/\2/"
+}
+
+hook_merge_requests_and_run_command() {
   local hook_id filter logdir cmd
   while test "$#" -gt 0; do
     case "$1" in
       --help ) 
-        echo "Usage: ${FUNCNAME[0]} --logdir DIR --hook-id ID --filter FILTER --cmd CMD"
+        echo "Usage: ${FUNCNAME[0]} --logdir DIR --hook-id ID --filter FILTER --cmd CMD < MERGE_REQUESTS_JSON_FILE"
         return 0
         ;;
       --logdir  ) logdir=$2; shift 2 ;;
       --hook-id ) hook_id=$2; shift 2 ;;
       --filter  ) filter=$2; shift 2 ;;
       --cmd     ) cmd=$2; shift 2 ;;
+      --*       ) echo "error: unknown option $1"; return 1 ;;
       *         ) break ;;
     esac
   done

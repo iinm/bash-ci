@@ -67,14 +67,13 @@ List merge requests.
 
 Run command when merge request is created / updated.
 ```sh
-./gitlab.bash list_merge_requests > ./tmp/merge_requests.json
 cat > ./tmp/hooks.ltsv << 'HOOKS'
 hook_id:echo-example	filter:.labels | map(. == "skip-ci") | any | not	cmd:echo "[$MERGE_REQUEST_IID] $SOURCE_BRANCH -> $TARGET_BRANCH ($MERGE_REQUEST_URL)"
 hook_id:jenkins-example	filter:.labels | map(. == "skip-ci") | any | not	cmd:curl --verbose --silent --show-error --fail -X POST -u $JENKINS_AUTH "http://localhost/job/test/build" -F json="$(./gitlab.bash merge_request_json_for_jenkins)"
 HOOKS
 
-./hook_gitlab_merge_requests --logdir ./tmp/hook_log \
-  --merge-requests ./tmp/merge_requests.json --hooks ./tmp/hooks.ltsv
+./gitlab.bash list_merge_requests \
+  | ./gitlab.bash hook_merge_requests --logdir ./tmp/hook_log --hooks ./tmp/hooks.ltsv
 ```
 
 - `--logdir`          : stdout / stderr of cmd will be output this directory

@@ -76,12 +76,12 @@ echo "case: post_build_status fails when invalid state is passed"
 test "$exit_status" -ne 0
 
 
-echo "case: hook_merge_requests"
+echo "case: hook_merge_requests_and_run_command"
 # given:
 rm -rf ./tmp
 # when:
 # shellcheck disable=SC2016
-./gitlab.bash hook_merge_requests --hook-id hook_merge_requests_test \
+./gitlab.bash hook_merge_requests_and_run_command --hook-id hook_merge_requests_test \
   --filter '.labels | map(. == "skip-ci") | any | not' --logdir ./tmp \
   --cmd 'echo "$MERGE_REQUEST_IID $SOURCE_BRANCH -> $TARGET_BRANCH ($MERGE_REQUEST_URL)"' \
   << MERGE_REQUESTS
@@ -112,7 +112,7 @@ test -f ./tmp/hook_merge_requests_test.002.log
 test "$(cat ./tmp/hook_merge_requests_test.002.log)" = "2 source2 -> target2 (http://localhost/test2)"
 
 
-echo "case: hook_merge_requests fail if cmd fail"
+echo "case: hook_merge_requests_and_run_command fail if cmd fail"
 # given:
 rm -rf ./tmp && mkdir ./tmp
 merge_requests=$(cat << MERGE_REQUESTS
@@ -130,19 +130,19 @@ merge_requests=$(cat << MERGE_REQUESTS
 MERGE_REQUESTS
 )
 # when:
-./gitlab.bash hook_merge_requests --hook-id hook_merge_requests_test \
+./gitlab.bash hook_merge_requests_and_run_command --hook-id hook_merge_requests_test \
   --filter 'true' --logdir ./tmp --cmd 'false' <<< "$merge_requests" || exit_status=$?
 # then:
 test "$exit_status" -ne 0
 
 
-echo "case: hook_merge_requests skip execution if log exists"
+echo "case: hook_merge_requests_and_run_command skip execution if log exists"
 # given:
 rm -rf ./tmp && mkdir ./tmp
 echo -n 'previous result' > ./tmp/hook_merge_requests_test.001.log
 # when:
 # shellcheck disable=SC2016
-./gitlab.bash hook_merge_requests --hook-id hook_merge_requests_test \
+./gitlab.bash hook_merge_requests_and_run_command --hook-id hook_merge_requests_test \
   --filter 'true' --logdir ./tmp \
   --cmd 'echo "$MERGE_REQUEST_IID $SOURCE_BRANCH -> $TARGET_BRANCH ($MERGE_REQUEST_URL)"' \
   << MERGE_REQUESTS
@@ -174,3 +174,96 @@ test "$(echo "$json" | jq -r '.parameter[2].name')" = "TARGET_BRANCH"
 test "$(echo "$json" | jq -r '.parameter[2].value')" = "target"
 test "$(echo "$json" | jq -r '.parameter[3].name')" = "MERGE_REQUEST_URL"
 test "$(echo "$json" | jq -r '.parameter[3].value')" = "http://localhost"
+
+
+echo "case: hook_merge_requests success"
+# given:
+rm -rf ./tmp && mkdir ./tmp
+merge_requests=$(cat << MR
+[
+  {
+    "iid": "1",
+    "title": "test mr 1",
+    "sha": "001",
+    "labels": [],
+    "source_branch": "source1",
+    "target_branch": "target1",
+    "web_url": "http://localhost/test1"
+  }
+]
+MR
+)
+cat > ./tmp/hooks.ltsv << HOOKS
+hook_id:success	filter:.labels | map(. == "skip-ci") | any | not	cmd:echo "success"
+HOOKS
+# when:
+echo "$merge_requests" \
+  | ./gitlab.bash hook_merge_requests --logdir ./tmp/hook_log --hooks ./tmp/hooks.ltsv
+# then:
+test "$(cat ./tmp/hook_log/success.001.log)" = "success"
+
+
+echo "case: hook_merge_requests fail"
+# given:
+rm -rf ./tmp && mkdir ./tmp
+merge_requests=$(cat << MR
+[
+  {
+    "iid": "1",
+    "title": "test mr 1",
+    "sha": "001",
+    "labels": [],
+    "source_branch": "source1",
+    "target_branch": "target1",
+    "web_url": "http://localhost/test1"
+  }
+]
+MR
+)
+cat > ./tmp/hooks.ltsv << HOOKS
+hook_id:fail	filter:.labels | map(. == "skip-ci") | any | not	cmd:echo "fail"; false
+hook_id:success	filter:.labels | map(. == "skip-ci") | any | not	cmd:echo "success"
+HOOKS
+# when:
+echo "$merge_requests" \
+  | ./gitlab.bash hook_merge_requests --logdir ./tmp/hook_log --hooks ./tmp/hooks.ltsv || exit_status=$?
+
+# then:
+test "$exit_status" -ne 0
+test "$(cat ./tmp/hook_log/fail.001.log)" = "fail"
+test "$(cat ./tmp/hook_log/success.001.log)" = "success"
+
+
+echo "case: hook_merge_requests trigger jenkins job"
+# given:
+rm -rf ./tmp && mkdir ./tmp
+merge_requests=$(cat << MR
+[
+  {
+    "iid": "1",
+    "title": "test mr 1",
+    "sha": "001",
+    "labels": [],
+    "source_branch": "source1",
+    "target_branch": "target1",
+    "web_url": "http://localhost/test1"
+  }
+]
+MR
+)
+cat > ./tmp/hooks.ltsv << 'HOOKS'
+hook_id:jenkins-example	filter:.labels | map(. == "skip-ci") | any | not	cmd:curl --verbose --silent --show-error --fail -X POST -u user:password "http://localhost:8080/job/test/build" -F json="$(./gitlab.bash merge_request_json_for_jenkins)"
+HOOKS
+(
+  # given:
+  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p 8080)
+  # then:
+  echo "$req" | grep -qE '^POST /job/test/build HTTP/1.1'
+  echo "$req" | grep -q '^{"parameter":\[{"name":"MERGE_REQUEST_IID","value":"1"},{"name":"SOURCE_BRANCH","value":"source1"},{"name":"TARGET_BRANCH","value":"target1"},{"name":"MERGE_REQUEST_URL","value":"http://localhost/test1"}\]}'
+) &
+request_validator_pid=$!
+# when:
+echo "$merge_requests" \
+  | ./gitlab.bash hook_merge_requests --logdir ./tmp/hook_log --hooks ./tmp/hooks.ltsv
+# then:
+wait "$request_validator_pid"
