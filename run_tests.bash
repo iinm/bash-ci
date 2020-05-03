@@ -3,8 +3,18 @@
 set -eu -o pipefail
 
 help() {
-  cat << HELP
+  cat << 'HELP'
 Usage: run_tests.bash [--logfile FILE] TEST_SCRIPT...
+
+Run test bash scripts
+
+  --logfile    save stderr to spcified file (default: test.log)
+  TEST_SCRIPT  test bash script
+               - start each test case with 'echo "case: ..."'
+               - notify failure by exit status
+               - do not output to stdout, use stderr
+               - split setup, execution, and verification by comments `# given:`, `# when:`, and `# then:`
+               - cleanup in setup phase
 HELP
 }
 
