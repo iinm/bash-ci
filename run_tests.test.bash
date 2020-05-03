@@ -2,15 +2,17 @@
 
 set -eu -o pipefail
 
+exec {stdout}>&1 1>&2
+
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 cd "$script_dir"
 
 
-echo "case: show help message"
+echo "case: show help message" >&${stdout}
 ./run_tests.bash --help | grep -qE "^Usage"
 
 
-echo "case: test success"
+echo "case: test success" >&${stdout}
 # given:
 rm -rf ./tmp && mkdir ./tmp
 cat > ./tmp/success.test.bash << 'SCRIPT'
@@ -32,7 +34,7 @@ diff -u <(echo "$expected") <(echo "$out")
 grep -q "+ echo 'case: success'" ./tmp/success-test.log
 
 
-echo "case: test fail"
+echo "case: test fail" >&${stdout}
 # given:
 rm -rf ./tmp && mkdir ./tmp
 cat > ./tmp/fail.test.bash << 'SCRIPT'
@@ -57,7 +59,7 @@ diff -u <(echo "$expected") <(echo "$out")
 grep -q "+ echo 'case: fail'" ./tmp/fail-test.log
 
 
-echo "case: run all scripts but fail if any test fail"
+echo "case: run all scripts but fail if any test fail" >&${stdout}
 # given:
 rm -rf ./tmp && mkdir ./tmp
 cat > ./tmp/success.test.bash << 'SCRIPT'

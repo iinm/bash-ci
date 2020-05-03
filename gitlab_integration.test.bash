@@ -2,6 +2,8 @@
 
 set -eu -o pipefail
 
+exec {stdout}>&1 1>&2
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$script_dir"
 
@@ -11,7 +13,7 @@ export GITLAB_PRIVATE_TOKEN=test-token
 export GITLAB_PROJECT_ID=001
 
 
-echo "case: combine mr comment and pipeline; success"
+echo "case: combine mr comment and pipeline; success" >&${stdout}
 (
   # given:
   # comment start
@@ -37,12 +39,12 @@ request_validator_pid=$!
   --comment-on-fail "fail" \
   ./with_gitlab_pipeline --commit-sha "777" \
     --build-system-name "Bash" --build-url "http://localhost" \
-  echo "Hello" >&2
+  echo "Hello"
 # then:
 wait "$request_validator_pid"
 
 
-echo "case: combine mr comment and pipeline; fail"
+echo "case: combine mr comment and pipeline; fail" >&${stdout}
 (
   # given:
   # comment start
@@ -68,13 +70,13 @@ request_validator_pid=$!
   --comment-on-fail "fail" \
   ./with_gitlab_pipeline --commit-sha "777" \
     --build-system-name "Bash" --build-url "http://localhost" \
-    false >&2 || exit_status=$?
+    false || exit_status=$?
 # then:
 test "$exit_status" -ne 0
 wait "$request_validator_pid"
 
 
-echo "case: combine mr comment and pipeline; cancel"
+echo "case: combine mr comment and pipeline; cancel" >&${stdout}
 (
   # given:
   # comment start
@@ -100,7 +102,7 @@ request_validator_pid=$!
   --comment-on-fail "fail" \
   ./with_gitlab_pipeline --commit-sha "777" \
     --build-system-name "Bash" --build-url "http://localhost" \
-  sleep 5 >&2 &
+  sleep 5 &
 pid=$!
 sleep 1
 kill -s HUP "$pid"

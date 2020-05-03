@@ -8,13 +8,13 @@ Usage: run_tests.bash [--logfile FILE] TEST_SCRIPT...
 
 Run test bash scripts
 
-  --logfile    save stderr to spcified file (default: test.log)
-  TEST_SCRIPT  test bash script
-               - start each test case with 'echo "case: ..."'
-               - notify failure by exit status
-               - do not output to stdout, use stderr
-               - split setup, execution, and verification by comments `# given:`, `# when:`, and `# then:`
-               - cleanup in setup phase
+  --logfile FILE  save stderr to spcified file (default: test.log)
+  TEST_SCRIPT     test bash script
+                  - Start each test case with description 'echo "case: ..."'
+                  - Exit script with status other than 0 when case fails
+                  - Do not output to stdout, use stderr
+                  - Split setup, execution, and verification by comments
+                    `# given:`, `# when:`, and `# then:`
 HELP
 }
 

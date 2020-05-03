@@ -2,6 +2,8 @@
 
 set -eu -o pipefail
 
+exec {stdout}>&1 1>&2
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$script_dir"
 
@@ -11,19 +13,19 @@ export GITLAB_PRIVATE_TOKEN=test-token
 export GITLAB_PROJECT_ID=001
 
 
-echo "case: show help message"
+echo "case: show help message" >&${stdout}
 # when:
 ./with_gitlab_pipeline --help | grep -qE "^Usage"
 
 
-echo "case: error on unknown option"
+echo "case: error on unknown option" >&${stdout}
 # when:
 out=$(./with_gitlab_pipeline --no-such-option) || exit_status=$?
 # then:
 echo "$out" | grep -qE "^error: unknown option --no-such-option"
 
 
-echo "case: command success"
+echo "case: command success" >&${stdout}
 (
   # given:
   req1=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
@@ -35,12 +37,12 @@ echo "case: command success"
 request_validator_pid=$!
 # when:
 ./with_gitlab_pipeline --commit-sha 777 --build-system-name "Bash" --build-url "http://localhost" \
-  echo "Hello" >&2
+  echo "Hello"
 # then:
 wait "$request_validator_pid"
 
 
-echo "case: command failed"
+echo "case: command failed" >&${stdout}
 (
   # given:
   req1=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
@@ -52,13 +54,13 @@ echo "case: command failed"
 request_validator_pid=$!
 # when:
 ./with_gitlab_pipeline --commit-sha 777 --build-system-name "Bash" --build-url "http://localhost" \
-  false >&2 || exit_status=$?
+  false || exit_status=$?
 # then:
 test "$exit_status" -ne 0
 wait "$request_validator_pid"
 
 
-echo "case: command canceled"
+echo "case: command canceled" >&${stdout}
 (
   # given:
   req1=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
@@ -70,7 +72,7 @@ echo "case: command canceled"
 request_validator_pid=$!
 # when:
 ./with_gitlab_pipeline --commit-sha 777 --build-system-name "Bash" --build-url "http://localhost" \
-  sleep 5 >&2 &
+  sleep 5 &
 pid=$!
 sleep 1
 kill -s HUP "$pid"

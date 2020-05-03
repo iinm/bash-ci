@@ -2,6 +2,8 @@
 
 set -eu -o pipefail
 
+exec {stdout}>&1 1>&2
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$script_dir"
 
@@ -10,11 +12,11 @@ export SLACK_BASE_URL=http://localhost:$slack_api_port
 export SLACK_API_TOKEN=test-token
 
 
-echo "case: show help message"
+echo "case: show help message" >&${stdout}
 ./with_slack_message --help | grep -qE "^Usage"
 
 
-echo "case: error on unknown option"
+echo "case: error on unknown option" >&${stdout}
 # when:
 out=$(./with_slack_message --no-such-option) || exit_status=$?
 # then:
@@ -22,7 +24,7 @@ test "$exit_status" -ne 0
 echo "$out" | grep -qE "^error: unknown option --no-such-option"
 
 
-echo "case: post start message on start and success message on success"
+echo "case: post start message on start and success message on success" >&${stdout}
 (
   # given:
   req1=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$slack_api_port")
@@ -37,12 +39,12 @@ request_validator_pid=$!
 # when:
 ./with_slack_message --channel "random" \
   --message-on-start "start" --message-on-success "success" \
-  true >&2
+  true
 # then:
 wait "$request_validator_pid"
 
 
-echo "case: post fail message on fail"
+echo "case: post fail message on fail" >&${stdout}
 (
   # given:
   req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$slack_api_port")
@@ -53,13 +55,13 @@ echo "case: post fail message on fail"
 request_validator_pid=$!
 # when:
 ./with_slack_message --channel "random" --message-on-success "success" --message-on-fail "fail" \
-  false >&2 || exit_status=$?
+  false || exit_status=$?
 # then:
 test "$exit_status" -ne 0
 wait "$request_validator_pid"
 
 
-echo "case: post cancel message on cancel"
+echo "case: post cancel message on cancel" >&${stdout}
 (
   # given:
   req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$slack_api_port")
@@ -69,7 +71,7 @@ echo "case: post cancel message on cancel"
 ) &
 request_validator_pid=$!
 # when:
-./with_slack_message --channel "random" --message-on-cancel "cancel" sleep 5 >&2 &
+./with_slack_message --channel "random" --message-on-cancel "cancel" sleep 5 &
 pid=$!
 sleep 1
 kill -s HUP "$pid"

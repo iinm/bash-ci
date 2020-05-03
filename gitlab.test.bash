@@ -2,6 +2,8 @@
 
 set -eu -o pipefail
 
+exec {stdout}>&1 1>&2
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$script_dir"
 
@@ -11,7 +13,7 @@ export GITLAB_PRIVATE_TOKEN=test-token
 export GITLAB_PROJECT_ID=001
 
 
-echo "case: list_merge_requests"
+echo "case: list_merge_requests" >&${stdout}
 (
   # given:
   req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
@@ -21,23 +23,23 @@ echo "case: list_merge_requests"
 ) &
 request_validator_pid=$!
 # when:
-./gitlab.bash list_merge_requests >&2
+./gitlab.bash list_merge_requests
 # then:
 wait "$request_validator_pid"
 
 
-echo "case: list_merge_requests fails when api returns 4xx"
+echo "case: list_merge_requests fails when api returns 4xx" >&${stdout}
 # given:
-echo -e "HTTP/1.1 400 Bad Request\n\nBad Request" | busybox nc -l -p "$api_port" >&2 &
+echo -e "HTTP/1.1 400 Bad Request\n\nBad Request" | busybox nc -l -p "$api_port" &
 mock_server_pid=$!
 # when:
-./gitlab.bash list_merge_requests >&2 || exit_status=$?
+./gitlab.bash list_merge_requests || exit_status=$?
 # then:
 test "$exit_status" -ne 0
 wait "$mock_server_pid"
 
 
-echo "case: comment_on_merge_request"
+echo "case: comment_on_merge_request" >&${stdout}
 (
   # given:
   req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
@@ -47,12 +49,12 @@ echo "case: comment_on_merge_request"
 ) &
 request_validator_pid=$!
 # when:
-./gitlab.bash comment_on_merge_request --iid 1 --comment "Build started" >&2
+./gitlab.bash comment_on_merge_request --iid 1 --comment "Build started"
 # then:
 wait "$request_validator_pid"
 
 
-echo "case: post_build_status"
+echo "case: post_build_status" >&${stdout}
 (
   # given:
   req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
@@ -63,20 +65,20 @@ echo "case: post_build_status"
 request_validator_pid=$!
 # when:
 ./gitlab.bash post_build_status --sha 777 --state running --name bash \
-  --target-url http://localhost/target >&2
+  --target-url http://localhost/target
 # then:
 wait "$request_validator_pid"
 
 
-echo "case: post_build_status fails when invalid state is passed"
+echo "case: post_build_status fails when invalid state is passed" >&${stdout}
 # when:
 ./gitlab.bash post_build_status --sha 777 --state no-such-state --name bash \
-  --target-url http://localhost/target >&2 || exit_status=$?
+  --target-url http://localhost/target || exit_status=$?
 # then:
 test "$exit_status" -ne 0
 
 
-echo "case: hook_merge_requests_and_run_command"
+echo "case: hook_merge_requests_and_run_command" >&${stdout}
 # given:
 rm -rf ./tmp
 # when:
@@ -112,7 +114,7 @@ test -f ./tmp/hook_merge_requests_test.002.log
 test "$(cat ./tmp/hook_merge_requests_test.002.log)" = "2 source2 -> target2 (http://localhost/test2)"
 
 
-echo "case: hook_merge_requests_and_run_command fail if cmd fail"
+echo "case: hook_merge_requests_and_run_command fail if cmd fail" >&${stdout}
 # given:
 rm -rf ./tmp && mkdir ./tmp
 merge_requests=$(cat << MERGE_REQUESTS
@@ -136,7 +138,7 @@ MERGE_REQUESTS
 test "$exit_status" -ne 0
 
 
-echo "case: hook_merge_requests_and_run_command skip execution if log exists"
+echo "case: hook_merge_requests_and_run_command skip execution if log exists" >&${stdout}
 # given:
 rm -rf ./tmp && mkdir ./tmp
 echo -n 'previous result' > ./tmp/hook_merge_requests_test.001.log
@@ -162,7 +164,7 @@ MERGE_REQUESTS
 test "$(cat ./tmp/hook_merge_requests_test.001.log)" = "previous result"
 
 
-echo "case: merge_request_json_for_jenkins"
+echo "case: merge_request_json_for_jenkins" >&${stdout}
 # when:
 json=$(env MERGE_REQUEST_IID=1 SOURCE_BRANCH=source TARGET_BRANCH=target MERGE_REQUEST_URL="http://localhost" ./gitlab.bash merge_request_json_for_jenkins)
 # then:
@@ -176,7 +178,7 @@ test "$(echo "$json" | jq -r '.parameter[3].name')" = "MERGE_REQUEST_URL"
 test "$(echo "$json" | jq -r '.parameter[3].value')" = "http://localhost"
 
 
-echo "case: hook_merge_requests success"
+echo "case: hook_merge_requests success" >&${stdout}
 # given:
 rm -rf ./tmp && mkdir ./tmp
 merge_requests=$(cat << MR

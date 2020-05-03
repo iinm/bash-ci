@@ -2,6 +2,8 @@
 
 set -eu -o pipefail
 
+exec {stdout}>&1 1>&2
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$script_dir"
 
@@ -10,12 +12,12 @@ export SLACK_BASE_URL=http://localhost:$api_port
 export SLACK_API_TOKEN=test-token
 
 
-echo "case: post_text_message show help message"
+echo "case: post_text_message show help message" >&${stdout}
 # when:
 ./slack.bash post_text_message --help | grep -qE '^Usage:'
 
 
-echo "case: post_text_message"
+echo "case: post_text_message" >&${stdout}
 (
   # given:
   req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
@@ -28,12 +30,12 @@ echo "case: post_text_message"
 ) &
 request_validator_pid=$!
 # when:
-./slack.bash post_text_message --channel "random" --text "Hello World!" >&2
+./slack.bash post_text_message --channel "random" --text "Hello World!"
 # then:
 wait "$request_validator_pid"
 
 
-echo "case: post_text_message with custom user name and user icon"
+echo "case: post_text_message with custom user name and user icon" >&${stdout}
 (
   # given:
   req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
@@ -45,23 +47,23 @@ echo "case: post_text_message with custom user name and user icon"
 request_validator_pid=$!
 # when:
 ./slack.bash post_text_message --channel "random" --text "Hello World!" \
-  --user-name "Bash" --user-icon "http://localhost/icon.png" >&2
+  --user-name "Bash" --user-icon "http://localhost/icon.png"
 # then:
 wait "$request_validator_pid"
 
 
-echo "case: post_text_message fails when API returns 4xx"
+echo "case: post_text_message fails when API returns 4xx" >&${stdout}
 # given:
-echo -e "HTTP/1.1 400 Bad Request\n\nBad Request" | busybox nc -l -p "$api_port" >&2 &
+echo -e "HTTP/1.1 400 Bad Request\n\nBad Request" | busybox nc -l -p "$api_port" &
 mock_server_pid=$!
 # when:
-./slack.bash post_text_message --channel "random" --text "Hello World!" >&2 || exit_status=$?
+./slack.bash post_text_message --channel "random" --text "Hello World!" || exit_status=$?
 # then:
 test "$exit_status" -ne 0
 wait "$mock_server_pid"
 
 
-echo "case: post_message"
+echo "case: post_message" >&${stdout}
 (
   # given:
   req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
@@ -72,7 +74,7 @@ echo "case: post_message"
 ) &
 request_validator_pid=$!
 # when:
-./slack.bash post_message >&2 << 'MESSAGE'
+./slack.bash post_message << 'MESSAGE'
 {
   "as_user": false,
   "username": "Bash",
