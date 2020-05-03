@@ -14,6 +14,16 @@ echo "case: show help message"
 ./with_slack_message --help | grep -qE "^Usage"
 
 
+echo "case: error on unknown option"
+# when:
+if out=$(./with_slack_message --no-such-option); then
+  echo "error: command should fail" >&2
+  exit 1
+fi
+# then:
+echo "$out" | grep -qE "^error: unknown option --no-such-option"
+
+
 echo "case: post start message on start and success message on success"
 (
   # given:

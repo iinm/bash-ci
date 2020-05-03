@@ -16,6 +16,16 @@ echo "case: show help message"
 ./with_gitlab_pipeline --help | grep -qE "^Usage"
 
 
+echo "case: error on unknown option"
+# when:
+if out=$(./with_gitlab_pipeline --no-such-option); then
+  echo "error: command should fail" >&2
+  exit 1
+fi
+# then:
+echo "$out" | grep -qE "^error: unknown option --no-such-option"
+
+
 echo "case: command success"
 (
   # given:

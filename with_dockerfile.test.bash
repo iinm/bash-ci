@@ -15,6 +15,16 @@ echo "case: show help message"
 ./with_dockerfile --help | grep -qE "^Usage"
 
 
+echo "case: error on unknown option"
+# when:
+if out=$(./with_dockerfile --no-such-option); then
+  echo "error: command should fail" >&2
+  exit 1
+fi
+# then:
+echo "$out" | grep -qE "^error: unknown option --no-such-option"
+
+
 echo "case: container can read stdin"
 # given:
 rm -rf ./tmp && mkdir -p ./tmp/with_dockerfile_test
