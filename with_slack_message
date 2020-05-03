@@ -15,14 +15,6 @@ Usage: with_slack_message --channel CHANNEL
          COMMAND
 
 Run command and post slack message
-
-  --channel             Slack channel
-  --message-on-start    Message on command start
-  --message-on-cancel   Message on command cancel
-  --message-on-success  Message on command success
-  --message-on-fail     Message on command fail
-  --user-name           Slack user name
-  --user-icon           Slack user icon
 HELP
 }
 

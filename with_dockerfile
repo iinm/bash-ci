@@ -12,18 +12,18 @@ Usage: with_dockerfile [--verbose] [--build-path DIR] [--dockerfile FILE]
 
 Run command on container using Dockerfile
 
-  --verbose               Output log to stderr
-  --build-path            Docker build path (default: current directory)
-  --dockerfile            Dockerfile path (default: <docker build path>/Dockerfile)
-  --image-name            Docker image name (default: <current directory name>:latest)
-  --run-opts              Docker run options (e.g., "--volume data:/data --publish 80:80")
-  --task-id               Unique ID to name container and work volume
-                          (default: generated random string)
-  --artifact              Artifact that will be copied from docker volume to
-                          host directory on exit
-  --artifacts-save-path   Host directory that artifacts will be copied
-                          (default: <current directory>/artifacts)
-  --remove-image-on-exit  Remove docker image on exit
+  --verbose                   Output log to stderr
+  --build-path DIR            Docker build path (default: current directory)
+  --dockerfile FILE           Dockerfile path (default: <docker build path>/Dockerfile)
+  --image-name NAME           Docker image name (default: <current directory name>:latest)
+  --run-opts OPTIONS          Docker run options (e.g., "--volume data:/data --publish 80:80")
+  --task-id ID                Unique ID to name container and work volume
+                              (default: generated random string)
+  --artifact PATH             Artifact that will be copied from docker volume to
+                              host directory on exit
+  --artifacts-save-path PATH  Host directory that artifacts will be copied
+                              (default: <current directory>/artifacts)
+  --remove-image-on-exit      Remove docker image on exit
 HELP
 }
 
