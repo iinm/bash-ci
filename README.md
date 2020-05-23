@@ -112,6 +112,43 @@ Combine Pipeline & Comment
 ```
 
 
+## GitHub
+
+Set environment variables.
+```sh
+export GITHUB_BASE_URL=https://github.com
+export GITHUB_REPO="your repo"  # e.g., iinm/bash-ci
+export GITHUB_TOKEN="your token"
+```
+
+Run command when pull request is created / updated.
+```sh
+cat > ./tmp/hooks.ltsv << 'HOOKS'
+hook_id:echo-example	filter:.labels | map(.name == "skip-ci") | any | not	cmd:echo "[$PULL_REQUEST_ID] $HEAD_REF -> $BASE_REF ($PULL_REQUEST_URL)"
+hook_id:jenkins-example	filter:.labels | map(.name == "skip-ci") | any | not	cmd:curl --verbose --silent --show-error --fail -X POST -u $JENKINS_AUTH "http://localhost/job/test/build" -F json="$(./gitlab.bash pull_request_json_for_jenkins)"
+HOOKS
+
+./github.bash list_pull_requests \
+  | ./github.bash hook_pull_requests --logdir ./tmp/hook_log --hooks ./tmp/hooks.ltsv
+```
+
+- `--logdir`          : stdout / stderr of cmd will be output this directory
+- `--hooks`           : hooks ltsv file
+  - `hook_id` : Unique ID (Used as a part of log file name)
+  - `filter`  : [jq](https://stedolan.github.io/jq/manual/) filter to select merge request to hook
+  - `cmd`     : Command you want to execute when merge request is created / updated; Environment variables `$PULL_REQUEST_ID`, `$HEAD_REF`, `$BASE_REF`, and `$PULL_REQUEST_URL` are automatically set
+
+Run command and comment result on pull request.
+```sh
+./with_github_pr_comment --id "1" \
+  --comment-on-start ":rocket: Build started." \
+  --comment-on-cancel ":crying_cat_face: Build canceled." \
+  --comment-on-success ":smile_cat: Build success." \
+  --comment-on-fail ":crying_cat_face: Build failed." \
+  make lint
+```
+
+
 ## Slack
 
 Set environment variables.
