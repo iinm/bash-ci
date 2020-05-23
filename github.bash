@@ -10,7 +10,6 @@ require_envs() {
   : "${GITHUB_TOKEN:?}"
 }
 
-# https://docs.gitlab.com/ee/api/pull_requests.html#list-merge-requests
 list_pull_requests() {
   require_envs
   local params=${1:-"state=open"}
@@ -19,7 +18,6 @@ list_pull_requests() {
     -H "Authorization: token $GITHUB_TOKEN"
 }
 
-# https://docs.gitlab.com/ee/api/notes.html#create-new-merge-request-note
 comment_on_pull_request() {
   local pull_request_id comment
   while test "$#" -gt 0; do
@@ -43,6 +41,53 @@ comment_on_pull_request() {
     "$GITHUB_BASE_URL/api/v3/repos/$GITHUB_REPO/issues/$pull_request_id/comments" \
     -H "Authorization: token $GITHUB_TOKEN" \
     -d "$(jq -n -c --arg body "$comment" '{ "body": $body }')"
+}
+
+# https://developer.github.com/v3/repos/statuses/
+post_build_status() {
+  local sha state description context target_url
+  while test "$#" -gt 0; do
+    case "$1" in
+      --help ) 
+        echo "Usage: ${FUNCNAME[0]} --sha COMMIT_SHA --state STATE --description DESCRIPTION --context BUILD_SYSTEM --target-url BUILD_SYSTEM_URL"
+        return 0
+        ;;
+      --sha        ) sha=$2; shift 2 ;;
+      --state      ) state=$2; shift 2 ;;
+      --description ) description=$2; shift 2 ;;
+      --context    ) context=$2; shift 2 ;;
+      --target-url ) target_url=$2; shift 2 ;;
+      --*          ) echo "error: unknown option $1"; return 1 ;;
+      *            ) break ;;
+    esac
+  done
+
+  require_envs
+  : "${sha?}"
+  : "${state?}"
+  : "${description:=""}"
+  : "${context:=""}"
+  : "${target_url:=""}"
+
+  if ! (echo "$state" | grep -qE '^(error|failure|pending|success)$'); then
+    echo "error: Invalid state" >&2
+    return 1
+  fi
+
+  log "Post build status; sha=$sha, state=$state, description=$description context=$context, target_url=$target_url"
+  local body
+  body=$(
+    jq -n -c \
+      --arg state "$state" \
+      --arg description "$description" \
+      --arg context "$context" \
+      --arg target_url "$target_url" \
+      '{ "state": $state, "target_url", $target_url, "description": $description, "context": $context }'
+  )
+  curl --silent --show-error --fail -X POST \
+    "$GITHUB_BASE_URL/api/v3/repos/$GITHUB_REPO/statuses/$sha" \
+    -H "Authorization: token $GITHUB_TOKEN" \
+    -d "$body"
 }
 
 hook_pull_requests() {
