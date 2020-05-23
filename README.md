@@ -8,7 +8,6 @@
 - [Bash](https://www.gnu.org/software/bash/)
 - [cURL](https://curl.haxx.se/)
 - [jq](https://stedolan.github.io/jq/)
-- [Docker](https://www.docker.com/) (Optional)
 
 
 ## Docker
