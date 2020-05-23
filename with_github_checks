@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+
+set -eu -o pipefail
+
+help() {
+  cat << 'HELP'
+Usage: with_github_checks --commit-sha COMMIT_SHA
+                          --context CONTEXT --build-url URL
+                          COMMAND
+
+Run command as GitHub Checks
+HELP
+}
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=github.bash
+source "$script_dir/github.bash"
+
+while test "$#" -gt 0; do
+  case "$1" in
+    --help              ) help; exit 0 ;;
+    --commit-sha        ) commit_sha=$2; shift 2 ;;
+    --context           ) context=$2; shift 2 ;;
+    --build-url         ) build_url=$2; shift 2 ;;
+    --*                 ) echo "error: unknown option $1"; exit 1 ;;
+    *                   ) break ;;
+  esac
+done
+
+require_envs
+: "${commit_sha?}"
+: "${context?}"
+: "${build_url?}"
+
+if test "$#" -eq 0; then
+  help >&2
+  exit 1
+fi
+
+on_exit() {
+  local exit_status="$?"
+  if test "$exit_status" -eq 0; then
+    post_build_status --sha "$commit_sha" --context "$context" \
+      --state 'success' --description "Success!" --target-url "$build_url" > /dev/null
+  else
+    post_build_status --sha "$commit_sha" --context "$context" \
+      --state 'failure' --description "Failed" --target-url "$build_url" > /dev/null
+  fi
+  return "$exit_status"
+}
+
+on_cancel() {
+  local exit_status=0
+  trap -- EXIT
+  kill -s HUP "$pid"
+  wait "$pid" || exit_status=$?
+  post_build_status --sha "$commit_sha" --context "$context" \
+    --state 'failure' --description "Canceled" --target-url "$build_url" > /dev/null
+  return "$exit_status"
+}
+
+trap 'on_exit' EXIT
+trap 'on_cancel' HUP INT QUIT TERM
+
+post_build_status --sha "$commit_sha" --context "$context" \
+  --state 'pending' --description "Started" --target-url "$build_url" > /dev/null
+
+"$@" &
+pid=$!
+wait "$pid"

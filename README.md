@@ -56,15 +56,6 @@ export GITLAB_PRIVATE_TOKEN="your token"   # https://gitlab.com/profile/personal
 export GITLAB_PROJECT_ID="your project id"
 ```
 
-List merge requests.
-```sh
-# List opened MR (default)
-./gitlab.bash list_merge_requests | jq .
-
-# Filter by date
-./gitlab.bash list_merge_requests | jq "map(select(.updated_at > \"2019-09-23T09:00:00.000Z\"))"
-```
-
 Run command when merge request is created / updated.
 ```sh
 cat > ./tmp/hooks.ltsv << 'HOOKS'
@@ -76,8 +67,8 @@ HOOKS
   | ./gitlab.bash hook_merge_requests --logdir ./tmp/hook_log --hooks ./tmp/hooks.ltsv
 ```
 
-- `--logdir`          : stdout / stderr of cmd will be output this directory
-- `--hooks`           : hooks ltsv file
+- `--logdir` : stdout / stderr of cmd will be output this directory
+- `--hooks`  : hooks ltsv file
   - `hook_id` : Unique ID (Used as a part of log file name)
   - `filter`  : [jq](https://stedolan.github.io/jq/manual/) filter to select merge request to hook
   - `cmd`     : Command you want to execute when merge request is created / updated; Environment variables `$MERGE_REQUEST_IID`, `$SOURCE_BRANCH`, `$TARGET_BRANCH`, and `$MERGE_REQUEST_URL` are automatically set
@@ -132,11 +123,17 @@ HOOKS
   | ./github.bash hook_pull_requests --logdir ./tmp/hook_log --hooks ./tmp/hooks.ltsv
 ```
 
-- `--logdir`          : stdout / stderr of cmd will be output this directory
-- `--hooks`           : hooks ltsv file
+- `--logdir` : stdout / stderr of cmd will be output this directory
+- `--hooks`  : hooks ltsv file
   - `hook_id` : Unique ID (Used as a part of log file name)
   - `filter`  : [jq](https://stedolan.github.io/jq/manual/) filter to select merge request to hook
   - `cmd`     : Command you want to execute when merge request is created / updated; Environment variables `$PULL_REQUEST_ID`, `$HEAD_REF`, `$BASE_REF`, and `$PULL_REQUEST_URL` are automatically set
+
+Run command as GitHub Checks
+```sh
+./with_github_checks --commit-sha 91052f873c570e03b88d12f87aaed3a978986cdb \
+  --context lint --build-url http://localhost make lint
+```
 
 Run command and comment result on pull request.
 ```sh

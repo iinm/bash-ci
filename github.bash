@@ -49,24 +49,24 @@ post_build_status() {
   while test "$#" -gt 0; do
     case "$1" in
       --help ) 
-        echo "Usage: ${FUNCNAME[0]} --sha COMMIT_SHA --state STATE --description DESCRIPTION --context BUILD_SYSTEM --target-url BUILD_SYSTEM_URL"
+        echo "Usage: ${FUNCNAME[0]} --sha COMMIT_SHA --context BUILD_SYSTEM --state STATE --description DESCRIPTION --target-url BUILD_SYSTEM_URL"
         return 0
         ;;
-      --sha        ) sha=$2; shift 2 ;;
-      --state      ) state=$2; shift 2 ;;
+      --sha         ) sha=$2; shift 2 ;;
+      --context     ) context=$2; shift 2 ;;
+      --state       ) state=$2; shift 2 ;;
       --description ) description=$2; shift 2 ;;
-      --context    ) context=$2; shift 2 ;;
-      --target-url ) target_url=$2; shift 2 ;;
-      --*          ) echo "error: unknown option $1"; return 1 ;;
-      *            ) break ;;
+      --target-url  ) target_url=$2; shift 2 ;;
+      --*           ) echo "error: unknown option $1"; return 1 ;;
+      *             ) break ;;
     esac
   done
 
   require_envs
   : "${sha?}"
+  : "${context:=""}"
   : "${state?}"
   : "${description:=""}"
-  : "${context:=""}"
   : "${target_url:=""}"
 
   if ! (echo "$state" | grep -qE '^(error|failure|pending|success)$'); then
@@ -74,7 +74,7 @@ post_build_status() {
     return 1
   fi
 
-  log "Post build status; sha=$sha, state=$state, description=$description context=$context, target_url=$target_url"
+  log "Post build status; sha=$sha, context=$context, state=$state, description=$description, target_url=$target_url"
   local body
   body=$(
     jq -n -c \
