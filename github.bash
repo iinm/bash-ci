@@ -122,7 +122,7 @@ hook_pull_requests() {
 
 value_from_ltsv() {
   key="${1?}"
-  sed -E "s/(^|.*\t)${key}:([^\t]*).*/\2/"
+  sed -E "s/(^|.+	)${key}:([^	]*).*/\2/"
 }
 
 hook_pull_requests_and_run_command() {
