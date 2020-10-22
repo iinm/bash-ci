@@ -46,6 +46,25 @@ echo "FROM node:current-alpine" > ./tmp/with_dockerfile_exmaple/Dockerfile
 ```
 
 
+## Git
+
+Run command when branch is pushed.
+```sh
+cat > ./tmp/hooks.ltsv << 'HOOKS'
+hook_id:echo-example	refs_pattern:master	cmd:echo "$REF - $COMMIT_SHA"
+hook_id:jenkins-example	refs_pattern:master	cmd:curl -vsSf -X POST -u "$JENKINS_AUTH" -F "BRANCH=$REF" -F "$COMMIT_SHA" http://127.0.0.1:8080/jenkins/job/template/buildWithParameters
+HOOKS
+
+git ls-remote https://github.com/iinm/bash-ci | ./git.bash hook_push --logdir ./tmp/hook_log --hooks ./tmp/hooks.ltsv
+```
+
+- `--logdir` : stdout / stderr of cmd will be output this directory
+- `--hooks`  : hooks ltsv file
+  - `hook_id` : Unique ID (Used as a part of log file name)
+  - `refs_pattern` : pattern to filter branches or tags
+  - `cmd`     : Command you want to execute when branch is pushed; Environment variables `$REF`, and `$COMMIT_SHA` are automatically set
+
+
 ## GitLab
 
 Set environment variables.
