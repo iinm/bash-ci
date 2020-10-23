@@ -3,32 +3,25 @@
 : "${SLACK_BASE_URL:="https://slack.com"}"
 
 post_text_message() {
-  local channel text user_name user_icon
+  local channel text
   while test "$#" -gt 0; do
     case "$1" in
       --help ) 
-        echo "Usage: ${FUNCNAME[0]} --channel CHANNEL --text TEXT [--user-name NAME] [--user-icon URL]"
+        echo "Usage: ${FUNCNAME[0]} --channel CHANNEL --text TEXT"
         return 0
         ;;
       --channel   ) channel=$2; shift 2 ;;
       --text      ) text=$2; shift 2 ;;
-      --user-name ) user_name=$2; shift 2 ;;
-      --user-icon ) user_icon=$2; shift 2 ;;
       *           ) break ;;
   esac
   done
   : "${SLACK_API_TOKEN:?}"
   : "${channel?}"
   : "${text?}"
-  : "${user_name:="Bot"}"
-  : "${user_icon:="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/GNOME_Builder_Icon_%28hicolor%29.svg/240px-GNOME_Builder_Icon_%28hicolor%29.svg.png"}"
 
   local body_template body
   body_template=$(cat << 'EOS'
     {
-      "as_user": false,
-      "username": $username,
-      "icon_url": $icon_url,
       "channel": $channel,
       "text": $text
     }
@@ -36,8 +29,6 @@ EOS
 )
   body=$(
     jq -n \
-      --arg username "$user_name" \
-      --arg icon_url "$user_icon" \
       --arg channel "$channel" \
       --arg text "$text" \
       "$body_template"
