@@ -35,23 +35,6 @@ request_validator_pid=$!
 wait "$request_validator_pid"
 
 
-echo "case: post_text_message with custom user name and user icon" >&${stdout}
-(
-  # given:
-  req=$(echo -e "HTTP/1.1 200 OK" | busybox nc -l -p "$api_port")
-  # then:
-  body=$(echo "$req" | grep -A 100 -E '^\s+$')
-  test "$(echo "$body" | jq -r .username)" = "Bash"
-  test "$(echo "$body" | jq -r .icon_url)" = "http://localhost/icon.png"
-) &
-request_validator_pid=$!
-# when:
-./slack.bash post_text_message --channel "random" --text "Hello World!" \
-  --user-name "Bash" --user-icon "http://localhost/icon.png"
-# then:
-wait "$request_validator_pid"
-
-
 echo "case: post_text_message fails when API returns 4xx" >&${stdout}
 # given:
 echo -e "HTTP/1.1 400 Bad Request\n\nBad Request" | busybox nc -l -p "$api_port" &
@@ -76,9 +59,6 @@ request_validator_pid=$!
 # when:
 ./slack.bash post_message << 'MESSAGE'
 {
-  "as_user": false,
-  "username": "Bash",
-  "icon_url": "http://localhost/icon.png",
   "channel": "random",
   "text": "Hello World!"
 }
