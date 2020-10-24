@@ -41,7 +41,7 @@ for file in "$@"; do
   else
     exit_status=$?
     echo "$(tput setaf 1)failed$(tput sgr0)"
-    tac "$logfile" | grep -B 1000 -m 1 "+ echo 'case:" | tac
+    tac "$logfile" | grep -B 1000 -m 1 "+ echo 'case:" | tac || true
   fi
 done
 
